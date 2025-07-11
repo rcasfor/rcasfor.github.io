@@ -8,12 +8,13 @@
     width="100%"
     frameborder="0"
     allowfullscreen
-    style="border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); height: 800px;" /* Initial height, will be overridden by JS */
+    style="border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba{0, 0, 0, 0.1); height: 800px;" /* Initial height, will be overridden by JS */
 >
 </iframe>
 
 <script>
     const receivedMessageDisplay = document.getElementById('received-message-display');
+    const iframeId = 'my-calendar-iframe'; // Define the ID of your iframe
 
     // Listen for messages from the iframe
     window.addEventListener('message', function(event) {
@@ -23,12 +24,13 @@
         // }
 
         // --- AFEGIT PER DEPURACIÓ: Registra tots els missatges rebuts ---
-        console.log('Missatge rebut al pare:', event);
+        console.log('Missatge rebut al pare (raw):', event);
         // ---------------------------------------------------------------
 
-        // Check if the message contains height information and it's a valid number
-        if (event.data && typeof event.data.height === 'number' && !isNaN(event.data.height)) {
-            const iframe = document.getElementById('my-calendar-iframe');
+        // Check if the message data is an object, contains the correct iframeId,
+        // and has a valid numeric 'height' property.
+        if (event.data && typeof event.data === 'object' && event.data.iframeId === iframeId && typeof event.data.height === 'number' && !isNaN(event.data.height)) {
+            const iframe = document.getElementById(iframeId);
             if (iframe) {
                 // Set the iframe's height to the received height
                 iframe.style.height = event.data.height + 'px';
@@ -36,13 +38,13 @@
             // Display only the height value in pixels
             receivedMessageDisplay.textContent = 'Alçada del calendari: ' + event.data.height + 'px';
             // --- NOU LOG PER CONFIRMAR L'ACTUALITZACIÓ DEL DIV ---
-            console.log('DIV actualitzat amb alçada:', event.data.height);
+            console.log('DIV actualitzat amb alçada vàlida:', event.data.height);
             // ------------------------------------------------------
         } else {
-            // Display a message if no height data is received or data is malformed
-            receivedMessageDisplay.textContent = 'Missatge rebut: (sense dades d\'alçada vàlides o propietat "height" no trobada)\nContingut del missatge: ' + JSON.stringify(event.data, null, 2);
+            // Display a message if the message is not from our iframe or doesn't contain valid height data
+            receivedMessageDisplay.textContent = 'Missatge rebut: (no és del calendari o dades d\'alçada no vàlides)\nContingut del missatge: ' + JSON.stringify(event.data, null, 2);
             // --- NOU LOG PER CONFIRMAR L'ACTUALITZACIÓ DEL DIV ---
-            console.log('DIV actualitzat amb missatge d\'error. Dades de l\'esdeveniment:', event.data);
+            console.log('DIV actualitzat amb missatge d\'error. Dades de l\'esdeveniment (no vàlides per al calendari):', event.data);
             // ------------------------------------------------------
         }
     });
