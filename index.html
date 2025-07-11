@@ -436,16 +436,16 @@
          * Sends the current height of the document body to the parent window.
          */
         function sendIframeHeight() {
-    // Get the scroll height of the body, which represents the full content height
-    const height = document.body.scrollHeight;
-    // Log the height to the console for debugging
-    console.log('Enviant alçada de l\'iframe:', height, 'px'); // <--- AFEGEIX AQUESTA LÍNIA
-    // Send the height to the parent window
-    window.parent.postMessage({
-        height: height,
-        iframeId: 'my-calendar-iframe' // Optional: send an ID if you have multiple iframes
-    }, '*'); // '*' means allow any origin. For production, specify your parent domain.
-}
+            // Get the scroll height of the body, which represents the full content height
+            const height = document.body.scrollHeight;
+            // Log the height to the console for debugging
+            console.log('Enviant alçada de l\'iframe:', height, 'px'); // <--- AFEGEIX AQUESTA LÍNIA
+            // Send the height to the parent window
+            window.parent.postMessage({
+                height: height,
+                iframeId: 'my-calendar-iframe' // Optional: send an ID if you have multiple iframes
+            }, '*'); // '*' means allow any origin. For production, specify your parent domain.
+        }
 
         // Initialize the calendar when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
