@@ -12,6 +12,9 @@
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
             color: #333;
+            /* Important: Remove fixed height on body if it was set */
+            min-height: 100vh; /* Ensure body takes at least viewport height */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
         }
         /* Custom scrollbar for better mobile experience if content overflows */
         .overflow-y-auto::-webkit-scrollbar {
@@ -94,12 +97,15 @@
 
     <script>
         // Define image URLs outside the scheduleData array
-        const lindyHopImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2024/12/parella-lindy.png';
-        const salsaBachataImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2025/07/Google_AI_Studio_2025-07-11T08_54_41.129Z.webp';
-        const linedanceImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2020/06/ebbasic_a_woman_on_her_30s_having_fun_dancing_line_dance_in_a_l_0fa46ed0-af9c-4e9b-b589-1af03732fce5.png';
-        const jsImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2025/07/Generated-image-1-1.webp';
-        const latinImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2025/07/Generated-image-1-2.webp';
-        const bsImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2018/12/ebbasic_a_photo_of_a_couple_on_their_30s_having_fun_dancing_bal_ed5c285f-5125-424e-8066-13519248b2e1.png';
+        // IMPORTANT: These URLs are now pointing to rcasfor.github.io.
+        // Ensure these images are actually uploaded to your GitHub Pages repository
+        // at the specified paths for them to display correctly.
+        const lindyHopImageUrl = 'https://rcasfor.github.io/parella-lindy.png';
+        const salsaBachataImageUrl = 'https://rcasfor.github.io/salsa.png';
+        const linedanceImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2020/06/ebbasic_a_woman_on_her_30s_having_fun_dancing_line_dance_in_a_l_0fa46ed0-af9c-4e9b-b589-1af03732fce5.png'; // No new URL provided, keeping old one
+        const jsImageUrl = 'https://rcasfor.github.io/Jazz%20steps.png';
+        const latinImageUrl = 'https://rcasfor.github.io/Latin%20solo.png';
+        const bsImageUrl = 'https://rcasfor.github.io/balls%20salo.png';
 
 
         // Define the schedule data based on the latest provided image
@@ -349,6 +355,7 @@
                     });
                 }
             }
+            sendIframeHeight(); // Send new height after rendering
         }
 
         /**
@@ -366,7 +373,7 @@
             let imageHtml = '';
             if (course.imageUrl) {
                 imageHtml = `
-                    <img src="${course.imageUrl}" alt="Imatge de ${course.name}" class="w-16 h-16 object-cover rounded-md shadow-sm flex-shrink-0" onerror="this.onerror=null;this.src='https://placehold.co/64x64/e2e8f0/64748b?text=Imatge';">
+                    <img src="${course.imageUrl}" alt="Imatge de ${course.name}" class="w-16 h-16 object-cover rounded-md shadow-sm flex-shrink-0" onerror="this.onerror=null;this.src='https://placehold.co/64x64/e2e8f0/64748b?text=Imatge+no+carregada';">
                 `;
             }
 
@@ -422,6 +429,20 @@
             } else {
                 toggleArrow.innerHTML = '&#9650;'; // Up arrow
             }
+            sendIframeHeight(); // Send new height after toggling filters
+        }
+
+        /**
+         * Sends the current height of the document body to the parent window.
+         */
+        function sendIframeHeight() {
+            // Get the scroll height of the body, which represents the full content height
+            const height = document.body.scrollHeight;
+            // Send the height to the parent window
+            window.parent.postMessage({
+                height: height,
+                iframeId: 'my-calendar-iframe' // Optional: send an ID if you have multiple iframes
+            }, '*'); // '*' means allow any origin. For production, specify your parent domain.
         }
 
         // Initialize the calendar when the DOM is fully loaded
@@ -433,8 +454,12 @@
 
             // Select the first day (Dilluns) by default
             currentActiveDay = 'Dilluns'; // Set initial active day
-            selectDay(currentActiveDay); // This will call renderCourses()
+            selectDay(currentActiveDay); // This will call renderCourses() and then sendIframeHeight()
+
+            // Also send height on window resize, as content might reflow
+            window.addEventListener('resize', sendIframeHeight);
         });
     </script>
 </body>
 </html>
+
