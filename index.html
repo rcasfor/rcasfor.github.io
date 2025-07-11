@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendari de Cursos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        /* Custom scrollbar for better mobile experience if content overflows */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #64778b;
+        }
+        /* Basic transition for filter section */
+        .filter-content-transition {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            overflow: hidden;
+        }
+        .filter-content-transition.hidden {
+            max-height: 0;
+            opacity: 0;
+        }
+        .filter-content-transition:not(.hidden) {
+            max-height: 500px; /* Adjust based on max content height */
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 shadow-lg rounded-b-lg">
+        <h1 class="text-3xl font-bold text-center">Horari Setmanal de Cursos</h1>
+    </header>
+
+    <main class="flex-grow p-4">
+        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-4 sm:p-6">
+            <!-- Day Tabs -->
+            <div id="day-tabs" class="flex flex-wrap justify-center gap-2 mb-6">
+                <!-- Tabs will be rendered here by JavaScript -->
+            </div>
+
+            <!-- Filter Section - Now Collapsible -->
+            <div class="mb-6 bg-gray-100 rounded-lg shadow-inner">
+                <button id="filter-toggle-button" class="w-full flex justify-between items-center p-4 text-xl font-semibold text-gray-800 bg-gray-200 hover:bg-gray-300 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span>Filtres</span>
+                    <span id="toggle-arrow" class="transform transition-transform duration-300">&#9660;</span> <!-- Down arrow -->
+                </button>
+                <div id="filter-content" class="filter-content-transition hidden p-4">
+                    <div class="mb-4">
+                        <h3 class="text-md font-medium mb-2 text-gray-700">Nivell:</h3>
+                        <div id="level-filters" class="flex flex-wrap gap-2">
+                            <!-- Level filter buttons will be rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="text-md font-medium mb-2 text-gray-700">Tipus de ball:</h3>
+                        <div id="dance-type-filters" class="flex flex-wrap gap-2">
+                            <!-- Dance type filter buttons will be rendered here -->
+                        </div>
+                    </div>
+
+                    <button id="clear-filters" class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 mt-4">
+                        Netejar Filtres
+                    </button>
+                </div>
+            </div>
+
+            <!-- Course List for Selected Day -->
+            <div id="course-list" class="space-y-4">
+                <!-- Course cards will be rendered here by JavaScript -->
+                <div class="text-center text-gray-500 py-8" id="no-courses-message" style="display: none;">
+                    No hi ha cursos programats per a aquest dia amb els filtres seleccionats.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Define image URLs outside the scheduleData array
+        const lindyHopImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2024/12/parella-lindy.png';
+        const salsaBachataImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2025/07/Google_AI_Studio_2025-07-11T08_54_41.129Z.webp';
+        const linedanceImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2020/06/ebbasic_a_woman_on_her_30s_having_fun_dancing_line_dance_in_a_l_0fa46ed0-af9c-4e9b-b589-1af03732fce5.png';
+        const jsImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2025/07/Generated-image-1-1.webp';
+        const latinImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2025/07/Generated-image-1-2.webp';
+        const bsImageUrl = 'https://www.escuelabaile.net/wp-content/uploads/2018/12/ebbasic_a_photo_of_a_couple_on_their_30s_having_fun_dancing_bal_ed5c285f-5125-424e-8066-13519248b2e1.png';
+
+
+        // Define the schedule data based on the latest provided image
+        const scheduleData = [
+            // Dilluns
+            { day: 'Dilluns', time: '20:00', name: 'Lindy Hop', level: 'Principiants 0', duration: '20:00-21:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
+            { day: 'Dilluns', time: '20:00', name: 'Bachata', level: 'Principiants 0', duration: '20:00-21:00', location: 'Sala 2', danceTypeCategory: 'Bachata', imageUrl: salsaBachataImageUrl },
+            { day: 'Dilluns', time: '21:00', name: 'Lindy Hop', level: 'Principiants 1', duration: '21:00-22:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
+            { day: 'Dilluns', time: '21:00', name: 'Salsa', level: 'Principiants 0', duration: '21:00-22:00', location: 'Sala 2', danceTypeCategory: 'Salsa', imageUrl: salsaBachataImageUrl },
+
+            // Dimarts
+            { day: 'Dimarts', time: '20:00', name: 'Lindy Hop', level: 'Avançat', duration: '20:00-21:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
+
+            // Dimecres
+            { day: 'Dimecres', time: '19:30', name: 'Line Dance', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: linedanceImageUrl },
+            { day: 'Dimecres', time: '20:00', name: 'Bachata', level: 'Intermig', duration: '20:00-21:00', location: 'Sala 2', danceTypeCategory: 'Bachata', imageUrl: salsaBachataImageUrl },
+            { day: 'Dimecres', time: '20:30', name: 'Lindy Hop', level: 'Intermig', duration: '20:30-21:30', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
+            { day: 'Dimecres', time: '21:00', name: 'Salsa', level: 'Intermig', duration: '21:00-22:00', location: 'Sala 2', danceTypeCategory: 'Salsa', imageUrl: salsaBachataImageUrl },
+
+            // Dijous
+            { day: 'Dijous', time: '19:30', name: 'Jazz Steps', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: jsImageUrl },
+            { day: 'Dijous', time: '20:30', name: 'Balls de Verbena', level: 'Principiants 0', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
+
+            // Divendres
+            { day: 'Divendres', time: '19:30', name: 'Latin Solo Reus', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: latinImageUrl },
+            { day: 'Divendres', time: '20:30', name: 'Balls de Verbena', level: 'Intermig', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
+        ];
+
+        // Get unique days from the schedule data
+        const daysOfWeek = ['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'];
+
+        const dayTabsContainer = document.getElementById('day-tabs');
+        const courseListContainer = document.getElementById('course-list');
+        const noCoursesMessage = document.getElementById('no-courses-message');
+        const clearFiltersButton = document.getElementById('clear-filters');
+        const filterToggleButton = document.getElementById('filter-toggle-button');
+        const filterContent = document.getElementById('filter-content');
+        const toggleArrow = document.getElementById('toggle-arrow');
+
+        let currentActiveDay = '';
+        let selectedLevels = [];
+        let selectedDanceTypes = [];
+
+        /**
+         * Renders the day tabs and sets up click listeners.
+         */
+        function renderDayTabs() {
+            dayTabsContainer.innerHTML = ''; // Clear existing tabs
+            daysOfWeek.forEach(day => {
+                const button = document.createElement('button');
+                button.textContent = day;
+                button.classList.add(
+                    'px-4', 'py-2', 'rounded-full', 'font-medium', 'text-sm', 'transition-all', 'duration-200',
+                    'hover:bg-blue-100', 'hover:text-blue-700', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'
+                );
+                button.dataset.day = day;
+                button.addEventListener('click', () => selectDay(day));
+                dayTabsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Selects a day, updates the active tab, and renders the courses for that day.
+         * This function is primarily used when no filters are active.
+         * @param {string} day The day to select.
+         */
+        function selectDay(day) {
+            currentActiveDay = day;
+
+            // Update active tab styling only if no filters are active
+            if (selectedLevels.length === 0 && selectedDanceTypes.length === 0) {
+                const buttons = dayTabsContainer.querySelectorAll('button');
+                buttons.forEach(button => {
+                    if (button.dataset.day === day) {
+                        button.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                        button.classList.remove('bg-gray-200', 'text-gray-700');
+                    } else {
+                        button.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                        button.classList.add('bg-gray-200', 'text-gray-700');
+                    }
+                });
+            }
+
+            renderCourses(); // Call renderCourses to apply filters globally or show specific day
+        }
+
+        /**
+         * Toggles a filter value (add/remove) from the selected filters array and updates button styling.
+         * @param {string} type The type of filter ('level' or 'danceType').
+         * @param {string} value The value of the filter to toggle.
+         */
+        function toggleFilter(type, value) {
+            let targetArray;
+            if (type === 'level') {
+                targetArray = selectedLevels;
+            } else if (type === 'danceType') {
+                targetArray = selectedDanceTypes;
+            }
+
+            const index = targetArray.indexOf(value);
+            if (index > -1) {
+                targetArray.splice(index, 1); // Remove if already selected
+            } else {
+                targetArray.push(value); // Add if not selected
+            }
+
+            // Update button styling
+            const button = document.querySelector(`button[data-filter-type="${type}"][data-filter-value="${value}"]`);
+            if (button) {
+                if (targetArray.includes(value)) {
+                    button.classList.add('bg-blue-500', 'text-white');
+                    button.classList.remove('bg-gray-200', 'text-gray-700');
+                } else {
+                    button.classList.remove('bg-blue-500', 'text-white');
+                    button.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            }
+
+            // Re-render courses with new filters
+            renderCourses();
+
+            // When filters are active, ensure day tabs are not highlighted as a single day
+            if (selectedLevels.length > 0 || selectedDanceTypes.length > 0) {
+                const buttons = dayTabsContainer.querySelectorAll('button');
+                buttons.forEach(button => {
+                    button.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                    button.classList.add('bg-gray-200', 'text-gray-700');
+                });
+            }
+        }
+
+        /**
+         * Renders the filter buttons for levels and dance types.
+         */
+        function renderFilterButtons() {
+            const levels = ['Principiants 0', 'Principiants 1', 'Intermig', 'Avançat'];
+            const danceTypes = ['Lindy Hop', 'Salsa', 'Bachata', 'Balls de Verbena', 'Balls sense parella'];
+
+            const levelFilterContainer = document.getElementById('level-filters');
+            const danceTypeFilterContainer = document.getElementById('dance-type-filters');
+
+            levelFilterContainer.innerHTML = '';
+            levels.forEach(level => {
+                const button = document.createElement('button');
+                button.textContent = level;
+                button.classList.add(
+                    'px-3', 'py-1', 'rounded-full', 'font-medium', 'text-xs', 'transition-all', 'duration-200',
+                    'bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'
+                );
+                button.dataset.filterType = 'level';
+                button.dataset.filterValue = level;
+                button.addEventListener('click', () => toggleFilter('level', level));
+                levelFilterContainer.appendChild(button);
+            });
+
+            danceTypeFilterContainer.innerHTML = '';
+            danceTypes.forEach(type => {
+                const button = document.createElement('button');
+                button.textContent = type;
+                button.classList.add(
+                    'px-3', 'py-1', 'rounded-full', 'font-medium', 'text-xs', 'transition-all', 'duration-200',
+                    'bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'
+                );
+                button.dataset.filterType = 'danceType';
+                button.dataset.filterValue = type;
+                button.addEventListener('click', () => toggleFilter('danceType', type));
+                danceTypeFilterContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Clears all selected filters and updates the UI.
+         */
+        function clearFilters() {
+            selectedLevels = [];
+            selectedDanceTypes = [];
+
+            // Reset button styling for all filter buttons
+            document.querySelectorAll('[data-filter-type]').forEach(button => {
+                button.classList.remove('bg-blue-500', 'text-white');
+                button.classList.add('bg-gray-200', 'text-gray-700');
+            });
+
+            // After clearing filters, revert to showing only the current active day
+            selectDay(currentActiveDay); // Re-select the current day to re-apply its highlight
+        }
+
+        /**
+         * Renders the list of courses for the selected day or all days, applying active filters.
+         */
+        function renderCourses() {
+            courseListContainer.innerHTML = ''; // Clear existing courses
+            let isFilteredView = selectedLevels.length > 0 || selectedDanceTypes.length > 0;
+
+            if (isFilteredView) {
+                // If filters are active, show courses for all days, grouped by day
+                let coursesFound = false;
+                daysOfWeek.forEach(d => {
+                    let coursesForCurrentDay = scheduleData.filter(course => course.day === d);
+
+                    // Apply level filter
+                    if (selectedLevels.length > 0) {
+                        coursesForCurrentDay = coursesForCurrentDay.filter(course => selectedLevels.includes(course.level));
+                    }
+
+                    // Apply dance type filter
+                    if (selectedDanceTypes.length > 0) {
+                        coursesForCurrentDay = coursesForCurrentDay.filter(course => {
+                            // Check if the exact name matches OR if the category matches
+                            return selectedDanceTypes.includes(course.name) || (course.danceTypeCategory && selectedDanceTypes.includes(course.danceTypeCategory));
+                        });
+                    }
+
+                    if (coursesForCurrentDay.length > 0) {
+                        coursesFound = true;
+                        // Add a day separator
+                        const daySeparator = document.createElement('h2');
+                        daySeparator.classList.add('text-2xl', 'font-bold', 'mt-6', 'mb-3', 'text-blue-700', 'border-b-2', 'border-blue-300', 'pb-1');
+                        daySeparator.textContent = d;
+                        courseListContainer.appendChild(daySeparator);
+
+                        // Sort and append courses for this day
+                        coursesForCurrentDay.sort((a, b) => a.time.localeCompare(b.time)).forEach(course => {
+                            appendCourseCard(course);
+                        });
+                    }
+                });
+
+                // Show/hide no courses message based on whether any courses were found across all days
+                if (!coursesFound) {
+                    noCoursesMessage.style.display = 'block';
+                } else {
+                    noCoursesMessage.style.display = 'none';
+                }
+
+            } else {
+                // If no filters are active, show courses only for the selected day
+                let coursesToDisplay = scheduleData.filter(course => course.day === currentActiveDay)
+                                               .sort((a, b) => a.time.localeCompare(b.time));
+                
+                if (coursesToDisplay.length === 0) {
+                    noCoursesMessage.style.display = 'block';
+                } else {
+                    noCoursesMessage.style.display = 'none';
+                    coursesToDisplay.forEach(course => {
+                        appendCourseCard(course);
+                    });
+                }
+            }
+        }
+
+        /**
+         * Helper function to append a single course card to the course list container.
+         * @param {object} course The course object.
+         */
+        function appendCourseCard(course) {
+            const courseCard = document.createElement('div');
+            courseCard.classList.add(
+                'bg-blue-50', 'p-4', 'rounded-lg', 'shadow-sm', 'border', 'border-blue-200',
+                'hover:shadow-md', 'transition-shadow', 'duration-200', 'cursor-pointer',
+                'flex', 'items-center', 'gap-4' // Flexbox for image and text
+            );
+
+            let imageHtml = '';
+            if (course.imageUrl) {
+                imageHtml = `
+                    <img src="${course.imageUrl}" alt="Imatge de ${course.name}" class="w-16 h-16 object-cover rounded-md shadow-sm flex-shrink-0" onerror="this.onerror=null;this.src='https://placehold.co/64x64/e2e8f0/64748b?text=Imatge';">
+                `;
+            }
+
+            courseCard.innerHTML = `
+                ${imageHtml}
+                <div class="flex-grow"> <!-- Container for text content -->
+                    <p class="text-lg font-semibold text-blue-800">${course.name}</p>
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium">Hora:</span> ${course.time} (${course.duration})
+                    </p>
+                    ${course.level ? `<p class="text-sm text-gray-600"><span class="font-medium">Nivell:</span> ${course.level}</p>` : ''}
+                    ${course.location ? `<p class="text-sm text-gray-600"><span class="font-medium">Ubicació:</span> ${course.location}</p>` : ''}
+                </div>
+            `;
+            courseCard.addEventListener('click', () => {
+                showCustomMessage(`Detalls del curs: ${course.name}\nDia: ${course.day}\nHora: ${course.time} (${course.duration})\nNivell: ${course.level || 'N/A'}\nUbicació: ${course.location || 'N/A'}`);
+            });
+            courseListContainer.appendChild(courseCard);
+        }
+
+        /**
+         * Shows a custom message box instead of alert().
+         * @param {string} message The message to display.
+         */
+        function showCustomMessage(message) {
+            const messageBox = document.createElement('div');
+            messageBox.classList.add(
+                'fixed', 'inset-0', 'bg-gray-800', 'bg-opacity-75', 'flex', 'items-center', 'justify-center', 'z-50',
+                'p-4'
+            );
+            messageBox.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+                    <p class="text-lg mb-4 whitespace-pre-line">${message}</p>
+                    <button id="close-message" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Tancar
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(messageBox);
+
+            document.getElementById('close-message').addEventListener('click', () => {
+                messageBox.remove();
+            });
+        }
+
+        /**
+         * Toggles the visibility of the filter content and updates the arrow icon.
+         */
+        function toggleFilters() {
+            filterContent.classList.toggle('hidden');
+            if (filterContent.classList.contains('hidden')) {
+                toggleArrow.innerHTML = '&#9660;'; // Down arrow
+            } else {
+                toggleArrow.innerHTML = '&#9650;'; // Up arrow
+            }
+        }
+
+        // Initialize the calendar when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDayTabs();
+            renderFilterButtons(); // Render filter buttons on load
+            clearFiltersButton.addEventListener('click', clearFilters); // Add event listener for clear filters button
+            filterToggleButton.addEventListener('click', toggleFilters); // Add event listener for filter toggle button
+
+            // Select the first day (Dilluns) by default
+            currentActiveDay = 'Dilluns'; // Set initial active day
+            selectDay(currentActiveDay); // This will call renderCourses()
+        });
+    </script>
+</body>
+</html>
