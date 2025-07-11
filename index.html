@@ -102,7 +102,7 @@
         // at the specified paths for them to display correctly.
         const lindyHopImageUrl = 'https://rcasfor.github.io/parella-lindy.png';
         const salsaBachataImageUrl = 'https://rcasfor.github.io/salsa.png';
-        const linedanceImageUrl = 'https://rcasfor.github.io/Line%20dance.png';
+        const linedanceImageUrl = 'https://rcasfor.github.io/Lin%20dance.png';
         const jsImageUrl = 'https://rcasfor.github.io/Jazz%20steps.png';
         const latinImageUrl = 'https://rcasfor.github.io/Latin%20solo.png';
         const bsImageUrl = 'https://rcasfor.github.io/balls%20salo.png';
@@ -355,7 +355,8 @@
                     });
                 }
             }
-            sendIframeHeight(); // Send new height after rendering
+            // Add a small delay before sending height to allow DOM to render
+            setTimeout(sendIframeHeight, 100); 
         }
 
         /**
@@ -429,7 +430,8 @@
             } else {
                 toggleArrow.innerHTML = '&#9650;'; // Up arrow
             }
-            sendIframeHeight(); // Send new height after toggling filters
+            // Add a small delay before sending height to allow DOM to render
+            setTimeout(sendIframeHeight, 100);
         }
 
         /**
@@ -439,7 +441,7 @@
             // Get the scroll height of the body, which represents the full content height
             const height = document.body.scrollHeight;
             // Log the height to the console for debugging
-            console.log('Enviant alçada de l\'iframe:', height, 'px'); // <--- AFEGEIX AQUESTA LÍNIA
+            console.log('Enviant alçada de l\'iframe:', height, 'px');
             // Send the height to the parent window
             window.parent.postMessage({
                 height: height,
@@ -459,9 +461,8 @@
             selectDay(currentActiveDay); // This will call renderCourses() and then sendIframeHeight()
 
             // Also send height on window resize, as content might reflow
-            window.addEventListener('resize', sendIframeHeight);
+            window.addEventListener('resize', () => setTimeout(sendIframeHeight, 100)); // Add delay to resize
         });
     </script>
 </body>
 </html>
-
