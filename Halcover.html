@@ -118,12 +118,12 @@
             { day: 'Dimarts', time: '20:30', name: 'Lindy Hop', level: 'Intermig', duration: '20:30-21:30', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
 
             // Dimecres
-            { day: 'Dimecres', time: '20:00', name: 'Lindy Hop', level: 'Iniciació', duration: '20:00-21:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
+            { day: 'Dimecres', time: '20:00', name: 'Lindy Hop', level: 'Principiants 0', duration: '20:00-21:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl }, // Changed from Iniciació to Principiants 0
             { day: 'Dimecres', time: '21:00', name: 'Lindy Hop', level: 'Intermig II', duration: '21:00-22:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
 
             // Dijous
             { day: 'Dijous', time: '19:30', name: 'Latin Solo', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: latinImageUrl },
-            { day: 'Dijous', time: '20:30', name: 'Balls Verbena', level: 'Principiants', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
+            { day: 'Dijous', time: '20:30', name: 'Balls Verbena', level: 'Principiants 0', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl }, // Changed from Principiants to Principiants 0
 
             // Divendres
             { day: 'Divendres', time: '19:30', name: 'Line Dance', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: linedanceImageUrl },
@@ -238,7 +238,8 @@
          * Renders the filter buttons for levels and dance types.
          */
         function renderFilterButtons() {
-            const levels = ['Principiants 0', 'Principiants 1', 'Intermig', 'Avançat', 'Intermig II', 'Iniciació']; // Added Alcover specific levels
+            // Updated levels: "Principiants" is now "Principiants 0"
+            const levels = ['Principiants 0', 'Principiants 1', 'Intermig', 'Intermig II', 'Avançat']; 
             const danceTypes = ['Lindy Hop', 'Salsa', 'Bachata', 'Balls de Verbena', 'Balls sense parella'];
 
             const levelFilterContainer = document.getElementById('level-filters');
