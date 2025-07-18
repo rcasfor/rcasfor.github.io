@@ -51,8 +51,8 @@
         <h1 class="text-3xl font-bold text-center">Horari Setmanal de Cursos</h1>
     </header>
 
-    <main id="main-content" class="flex-grow p-4"> <!-- Added ID to main for height measurement -->
-        <div id="calendar-wrapper" class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-4 sm:p-6"> <!-- Added ID here -->
+    <main id="main-content" class="flex-grow p-4">
+        <div id="calendar-wrapper" class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-4 sm:p-6">
             <!-- Day Tabs -->
             <div id="day-tabs" class="flex flex-wrap justify-center gap-2 mb-6">
                 <!-- Tabs will be rendered here by JavaScript -->
@@ -97,9 +97,6 @@
 
     <script>
         // Define image URLs outside the scheduleData array
-        // IMPORTANT: These URLs are now pointing to rcasfor.github.io.
-        // Ensure these images are actually uploaded to your GitHub Pages repository
-        // at the specified paths for them to display correctly.
         const lindyHopImageUrl = 'https://rcasfor.github.io/parella-lindy.png';
         const salsaBachataImageUrl = 'https://rcasfor.github.io/salsa.png';
         const linedanceImageUrl = 'https://rcasfor.github.io/Line%20dance.png'; 
@@ -145,6 +142,10 @@
         let currentActiveDay = '';
         let selectedLevels = [];
         let selectedDanceTypes = [];
+
+        // Get the iframeId from the URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentIframeId = urlParams.get('iframeId') || 'default-calendar-iframe'; // Use a default if not found
 
         /**
          * Renders the day tabs and sets up click listeners.
@@ -443,7 +444,7 @@
             // Send the height to the parent window
             window.parent.postMessage({
                 height: height,
-                iframeId: 'my-calendar-iframe' // Optional: send an ID if you have multiple iframes
+                iframeId: currentIframeId // Use the dynamically obtained iframeId
             }, '*'); // '*' means allow any origin. For production, specify your parent domain.
         }
 
