@@ -443,7 +443,7 @@
          */
         function sendIframeHeight() {
             // Get the scroll height of the calendar wrapper, which represents the full content height
-            const height = calendarWrapper.scrollHeight; // Use the specific wrapper element
+            const height = calendarWrapper.scrollHeight + 100; // Use the specific wrapper element
             // Log the height to the console for debugging
             console.log('Enviant alçada de l\'iframe:', height, 'px');
             // Send the height to the parent window
