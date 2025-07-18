@@ -51,8 +51,8 @@
         <h1 class="text-3xl font-bold text-center">Horari Setmanal de Cursos</h1>
     </header>
 
-    <main id="main-content" class="flex-grow p-4"> <!-- Added ID to main for height measurement -->
-        <div id="calendar-wrapper" class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-4 sm:p-6"> <!-- Added ID here -->
+    <main id="main-content" class="flex-grow p-4">
+        <div id="calendar-wrapper" class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-4 sm:p-6">
             <!-- Day Tabs -->
             <div id="day-tabs" class="flex flex-wrap justify-center gap-2 mb-6">
                 <!-- Tabs will be rendered here by JavaScript -->
@@ -97,19 +97,15 @@
 
     <script>
         // Define image URLs outside the scheduleData array
-        // IMPORTANT: These URLs are now pointing to rcasfor.github.io.
-        // Ensure these images are actually uploaded to your GitHub Pages repository
-        // at the specified paths for them to display correctly.
         const lindyHopImageUrl = 'https://rcasfor.github.io/parella-lindy.png';
         const salsaBachataImageUrl = 'https://rcasfor.github.io/salsa.png';
-        // Corrected URL for Line Dance based on common URL encoding for spaces
-        const linedanceImageUrl = 'https://rcasfor.github.io/Line%20dance.png'; 
+        const linedanceImageUrl = 'https://rcasfor.github.io/Line%20dance.png';
         const jsImageUrl = 'https://rcasfor.github.io/Jazz%20steps.png';
         const latinImageUrl = 'https://rcasfor.github.io/Latin%20solo.png';
         const bsImageUrl = 'https://rcasfor.github.io/balls%20salo.png';
 
 
-        // Define the schedule data based on the latest provided image
+        // Define the schedule data for Reus (original data)
         const scheduleData = [
             // Dilluns
             { day: 'Dilluns', time: '20:00', name: 'Lindy Hop', level: 'Principiants 0', duration: '20:00-21:00', location: 'Sala Principal', danceTypeCategory: 'Lindy Hop', imageUrl: lindyHopImageUrl },
@@ -128,11 +124,11 @@
 
             // Dijous
             { day: 'Dijous', time: '19:30', name: 'Jazz Steps', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: jsImageUrl },
-            { day: 'Dijous', time: '20:30', name: 'Balls de Verbena', level: 'Principiants 0', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
+            { day: 'Dijous', time: '20:30', name: 'Balls Verbena', level: 'Principiants 0', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
 
             // Divendres
-            { day: 'Divendres', time: '19:30', name: 'Latin Solo Reus', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: latinImageUrl },
-            { day: 'Divendres', time: '20:30', name: 'Balls de Verbena', level: 'Intermig', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
+            { day: 'Divendres', time: '19:30', name: 'Latin Solo', level: null, duration: '19:30-20:30', location: 'Sala Principal', danceTypeCategory: 'Balls sense parella', imageUrl: latinImageUrl },
+            { day: 'Divendres', time: '20:30', name: 'Balls Verbena', level: 'Intermig', duration: '20:30-22:00', location: 'Sala Principal', danceTypeCategory: 'Balls de Verbena', imageUrl: bsImageUrl },
         ];
 
         // Get unique days from the schedule data
@@ -147,9 +143,14 @@
         const toggleArrow = document.getElementById('toggle-arrow');
         const calendarWrapper = document.getElementById('calendar-wrapper'); // Get the new wrapper element
 
+        // Declare and initialize variables at the global scope
         let currentActiveDay = '';
         let selectedLevels = [];
         let selectedDanceTypes = [];
+
+        // Get the iframeId from the URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentIframeId = urlParams.get('iframeId') || 'default-calendar-iframe'; // Use a default if not found
 
         /**
          * Renders the day tabs and sets up click listeners.
@@ -243,7 +244,8 @@
          * Renders the filter buttons for levels and dance types.
          */
         function renderFilterButtons() {
-            const levels = ['Principiants 0', 'Principiants 1', 'Intermig', 'Avançat'];
+            // Updated levels: "Principiants" is now "Principiants 0"
+            const levels = ['Principiants 0', 'Principiants 1', 'Intermig', 'Intermig II', 'Avançat'];
             const danceTypes = ['Lindy Hop', 'Salsa', 'Bachata', 'Balls de Verbena', 'Balls sense parella'];
 
             const levelFilterContainer = document.getElementById('level-filters');
@@ -347,7 +349,7 @@
                 // If no filters are active, show courses only for the selected day
                 let coursesToDisplay = scheduleData.filter(course => course.day === currentActiveDay)
                                                .sort((a, b) => a.time.localeCompare(b.time));
-                
+
                 if (coursesToDisplay.length === 0) {
                     noCoursesMessage.style.display = 'block';
                 } else {
@@ -358,7 +360,7 @@
                 }
             }
             // Add a small delay before sending height to allow DOM to render
-            setTimeout(sendIframeHeight, 100); 
+            setTimeout(sendIframeHeight, 100);
         }
 
         /**
@@ -447,7 +449,7 @@
             // Send the height to the parent window
             window.parent.postMessage({
                 height: height,
-                iframeId: 'my-calendar-iframe' // Optional: send an ID if you have multiple iframes
+                iframeId: currentIframeId // Use the dynamically obtained iframeId
             }, '*'); // '*' means allow any origin. For production, specify your parent domain.
         }
 
