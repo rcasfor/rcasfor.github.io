@@ -48,7 +48,7 @@
 </head>
 <body class="min-h-screen flex flex-col">
     <header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 shadow-lg rounded-b-lg">
-        <h1 class="text-3xl font-bold text-center">Horari Setmanal de Cursos</h1>
+        <h1 class="text-3xl font-bold text-center">Horari Setmanal de Cursos Alcover</h1>
     </header>
 
     <main id="main-content" class="flex-grow p-4">
@@ -438,7 +438,7 @@
          */
         function sendIframeHeight() {
             // Get the scroll height of the calendar wrapper, which represents the full content height
-            const height = calendarWrapper.scrollHeight; // Use the specific wrapper element
+            const height = calendarWrapper.scrollHeight + 100; // Use the specific wrapper element
             // Log the height to the console for debugging
             console.log('Enviant alçada de l\'iframe:', height, 'px');
             // Send the height to the parent window
