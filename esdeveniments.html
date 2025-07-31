@@ -32,9 +32,12 @@
             <h1 class="text-5xl font-extrabold text-white">Esdeveniments d'estiu</h1>
         </header>
 
-        <div class="mb-8">
-            <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105">
-                Agost 2025
+        <div class="mb-8 flex space-x-4">
+            <button id="show-all-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105">
+                Tots els Esdeveniments
+            </button>
+            <button id="filter-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105">
+                Agost i Setembre
             </button>
         </div>
 
@@ -56,6 +59,15 @@
                 <p><strong>Lloc:</strong> <span id="modal-location"></span></p>
                 <p><strong>Entrada:</strong> <span id="modal-price"></span></p>
                 <p><strong>Tipus:</strong> <span id="modal-type"></span></p>
+                <div class="mt-4">
+                    <a id="modal-map-link" href="#" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Veure al mapa
+                    </a>
+                </div>
                 <p id="modal-description" class="whitespace-pre-wrap"></p>
             </div>
         </div>
@@ -63,7 +75,7 @@
 
     <script>
         // Data for events
-        const eventsData = [
+        const allEventsData = [
             {
                 name: "Jam de Swing a Altafulla",
                 dateTime: "Divendres, 1 d'agost, 20:00 - 22:30",
@@ -71,7 +83,7 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\nConsumició mínima obligatòria"
+                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
             },
             {
                 name: "Jam de Swing a Altafulla",
@@ -80,7 +92,7 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\nConsumició mínima obligatòria"
+                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
             },
             {
                 name: "Jam de Swing a Altafulla",
@@ -89,7 +101,7 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\nConsumició mínima obligatòria"
+                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
             },
             {
                 name: "Jam de Swing a Altafulla",
@@ -98,7 +110,7 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\nConsumició mínima obligatòria"
+                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
             },
             {
                 name: "Jam de Swing a Altafulla",
@@ -107,7 +119,7 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\nConsumició mínima obligatòria"
+                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
             },
             {
                 name: "Festa Major de Constantí",
@@ -116,7 +128,7 @@
                 price: "Gratuït",
                 type: "Festa",
                 imageUrl: "https://rcasfor.github.io/festa%20major%20constanti.png",
-                description: "Que comenci la festa!\n\nAquest divendres 1 d'agost, la Festa Major de Constantí et convida a una nit inoblidable. Estàs preparat/da per ballar?\nA partir de les 23 h, l'orquestra Saturno serà l'encarregada de posar la banda sonora a una nit de música i diversió. Ens trobarem just davant de l'Ajuntament de Constantí.\nVolem que t'uneixis a nosaltres per gaudir d'una nit d'estiu amb la millor música, bona companyia i l'ambient inigualable de la Festa Major. T'ho perdràs?"
+                description: "Que comenci la festa!\\n\\nAquest divendres 1 d'agost, la Festa Major de Constantí et convida a una nit inoblidable. Estàs preparat/da per ballar?\\nA partir de les 23 h, l'orquestra Saturno serà l'encarregada de posar la banda sonora a una nit de música i diversió. Ens trobarem just davant de l'Ajuntament de Constantí.\\nVolem que t'uneixis a nosaltres per gaudir d'una nit d'estiu amb la millor música, bona companyia i l'ambient inigualable de la Festa Major. T'ho perdràs?"
             },
             {
                 name: "Vespes & Swing",
@@ -125,7 +137,7 @@
                 price: "Gratuït",
                 type: "Swing",
                 imageUrl: "https://rcasfor.github.io/vespes%20&%20swing.jpg",
-                description: "🎉Dissabte 9 d’Agost a Picamoixons\n\n12:30-Classe oberta de Lindy Hop a càrrec d'Alba Regada\n13:00-Jam amb la banda The Walking Bounce Swing💃\n\n🍴Dinar 10€\nVermut + Entrepà de llonganissa a la brasa i beguda ( vi, aigua i gaseosa)\n📞 Reserva per dinar al 626731751 Imprescindible\nData límit reserves 5 d’agost\n\n👉 Local social de Picamoixons: C/ Sant Isidre, n.3\n\n🛵 Podreu gaudir de l’exposició de Vespes dels companys moteros que participen a la 1a Trobada Vespera de Picamoixons"
+                description: "🎉Dissabte 9 d’Agost a Picamoixons\\n\\n12:30-Classe oberta de Lindy Hop a càrrec d'Alba Regada\\n13:00-Jam amb la banda The Walking Bounce Swing💃\\n\\n🍴Dinar 10€\\nVermut + Entrepà de llonganissa a la brasa i beguda ( vi, aigua i gaseosa)\\n📞 Reserva per dinar al 626731751 Imprescindible\\nData límit reserves 5 d’agost\\n\\n👉 Local social de Picamoixons: C/ Sant Isidre, n.3\\n\\n🛵 Podreu gaudir de l’exposició de Vespes dels companys moteros que participen a la 1a Trobada Vespera de Picamoixons"
             },
             {
                 name: "Taller gratuït de Lindy Hop Ohana Fest (Garòs)",
@@ -134,7 +146,7 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/ohana%20fest.jpg",
-                description: "Lindy Hop a la Vall d'Aran: Mou-te a Garòs!\n\nAquest divendres 9 d'agost, el festival Ohana Fest et porta una proposta irresistible: un taller de Lindy Hopa càrrec d'Elisabet Alonso & Roger Casasampere per a tots els públics a la bonica localitat de Garòs, a la Vall d'Aran.\nViu la màgia d'aprendre els passos d'aquest ball històric en un entorn idíl·lic: la Plaça Major de Garòs, un dels pobles més singulars de la vall, amb les seves cases de pedra i la seva arquitectura tradicional que respira història i tranquil·litat.\nNo cal que tinguis experiència prèvia, només ganes de passar-t'ho bé! Uneix-te a nosaltres a les 18 h i deixa't portar pel ritme. Serà una tarda fantàstica per connectar amb la música, la gent i l'encant de la Vall d'Aran.\nNo t'ho perdis! T'esperem a la plaça per ballar junts."
+                description: "Lindy Hop a la Vall d'Aran: Mou-te a Garòs!\\n\\nAquest divendres 9 d'agost, el festival Ohana Fest et porta una proposta irresistible: un taller de Lindy Hopa càrrec d'Elisabet Alonso & Roger Casasampere per a tots els públics a la bonica localitat de Garòs, a la Vall d'Aran.\\nViu la màgia d'aprendre els passos d'aquest ball històric en un entorn idíl·lic: la Plaça Major de Garòs, un dels pobles més singulars de la vall, amb les seves cases de pedra i la seva arquitectura tradicional que respira història i tranquil·litat.\\nNo cal que tinguis experiència prèvia, només ganes de passar-t'ho bé! Uneix-te a nosaltres a les 18 h i deixa't portar pel ritme. Serà una tarda fantàstica per connectar amb la música, la gent i l'encant de la Vall d'Aran.\\nNo t'ho perdis! T'esperem a la plaça per ballar junts."
             },
             {
                 name: "Jam de Swing a Senan",
@@ -143,7 +155,43 @@
                 price: "Gratuït",
                 type: "Swing Jam",
                 imageUrl: "https://rcasfor.github.io/logo%20BASIC%20.jpg",
-                description: "Jam de Ball a Senan: Vine a Moure l'Esquelet!\n\nAquest 15 d'agost, la Conca de Barberà et convida a una nit màgica. Vine a la primera Jam de ball que celebrem a Senan, un poble amb unes vistes espectaculars i envoltat d'un patrimoni històric i cultural increïble.\nBallarem a la Plaça Antoni Saltó, just darrere de l'Ajuntament. L'energia la posarà el nostre DJ, que farà sonar la millor música per a tots els gustos.\nApunta't la data i l'hora: a les 22.30 h. No hi ha millor manera de gaudir de la nit d'estiu que ballant a l'aire lliure, fent nous amics i deixant-te portar per la música.\nT'esperem per viure una nit inoblidable! No t'ho perdis!"
+                description: "Jam de Ball a Senan: Vine a Moure l'Esquelet!\\n\\nAquest 15 d'agost, la Conca de Barberà et convida a una nit màgica. Vine a la primera Jam de ball que celebrem a Senan, un poble amb unes vistes espectaculars i envoltat d'un patrimoni històric i cultural increïble.\\nBallarem a la Plaça Antoni Saltó, just darrere de l'Ajuntament. L'energia la posarà el nostre DJ, que farà sonar la millor música per a tots els gustos.\\nApunta't la data i l'hora: a les 22.30 h. No hi ha millor manera de gaudir de la nit d'estiu que ballant a l'aire lliure, fent nous amics i deixant-te portar per la música.\\nT'esperem per viure una nit inoblidable! No t'ho perdis!"
+            },
+            {
+                name: "Swing Jam Session",
+                dateTime: "31 de juliol de 2025, de 22:00 a 23:30",
+                location: "Av. del Mar, 1",
+                price: "Cal registrar-se enviant un correu a info@alfacs.com",
+                type: "Jam de swing",
+                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/Diseno-sin-titulo-24.png",
+                description: "Continuant amb la programació d’espectacles musicals d’estiu del Camping Alfacs, el proper 31 de juliol gaudirem al Salina Beach Club d’una jam de swing a càrrec de Walking Bounce Swing en la seva versió de trio i un repertori variat dirigit a tots els hoppers perquè no parin de ballar."
+            },
+            {
+                name: "Swing Jam Session",
+                dateTime: "14 d'agost de 2025, de 22:00 a 23:30",
+                location: "Av. del Mar, 1",
+                price: "Tancada",
+                type: "Jam de swing en format quartet",
+                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/Diseno-sin-titulo-24.png",
+                description: "Walking Bounce Swing amb la veu d’Anna Amaré ens tornen a acompanyar durant una nit plena de Swing, aquest cop en format quartet. Us esperem al Salines Beach Club del Camping Alfacs a partir de les 22.00H per una jam plena de ritme i ball!"
+            },
+            {
+                name: "BLUES DANCE Jam Session",
+                dateTime: "22 d'agost de 2025, de 22:00 a 00:00",
+                location: "Av. de la Diputació s/n, Cambrils",
+                price: "Cal registrar-se enviant un correu a ms@modoswing.com",
+                type: "Jam Session de Blues Dance",
+                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/blues-10.png",
+                description: "Vine a gaudir del blues amb nosaltres a Cambrils! El proper divendres 22 d’agost vine a ballar i a sentir la màgia del blues en una jam session davant del mar! Sigui que siguis un ballarí experimentat o simplement t’agrada moure’t al ritme de la música, aquesta és la teva oportunitat per connectar amb altres apassionats del ball i passar-ho en gran! T’esperem a la Torre de l’Esquirol de Cambrils a les 22’00h. No et perdis aquesta oportunitat per viure una nit plena de música, ball i diversió! Porta les teves sabates de ball i uneix-te a nosaltres per una nit inoblidable."
+            },
+            {
+                name: "Swing Jam Session",
+                dateTime: "13 de setembre de 2025, de 21:00 a 23:00",
+                location: "Carrer Masia, 3, 43520 Roquetes, Tarragona, España",
+                price: "Cal registrar-se enviant un correu a ms@modoswing.com",
+                type: "Jam de swing",
+                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/vins.png",
+                description: "Quarta edició de la Fira Gastronòmica del Vi i dels Productes Locals ‘De Roquetes Vi i Punyetes baixo’, amb la participació de cellers i carpes amb tapes i productes locals, a més de moltes actuacions musicals. Aquest any el swing tornarà a formar part d’aquest esdeveniment amb música en viu per a poder ballar tots els ritmes per ballar! Ens espera Walking Bounce Swing a les 22’00h del dissabte 13 de setembre a l’Hort de Cruells de Roquetes amb la seves versions per gaudir ballant del Lindy Hop, Blues i altres…"
             }
         ];
 
@@ -151,6 +199,9 @@
         const eventsContainer = document.getElementById('events-container');
         const eventDetailModal = document.getElementById('event-detail-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
+        const showAllBtn = document.getElementById('show-all-btn');
+        const filterBtn = document.getElementById('filter-btn');
+
         const modalImage = document.getElementById('modal-image');
         const modalName = document.getElementById('modal-name');
         const modalDateTime = document.getElementById('modal-datetime');
@@ -158,11 +209,78 @@
         const modalPrice = document.getElementById('modal-price');
         const modalType = document.getElementById('modal-type');
         const modalDescription = document.getElementById('modal-description');
+        const modalMapLink = document.getElementById('modal-map-link');
+
+        // Helper function to extract month and day from dateTime string
+        function getMonthAndDay(dateTimeString) {
+            const dayMatch = dateTimeString.match(/\b(\d+)\b/);
+            const monthMatch = dateTimeString.match(/\b(juliol|agost|setembre)\b/i);
+
+            if (!dayMatch || !monthMatch) {
+                console.warn("Could not parse date from:", dateTimeString);
+                return { day: 'Unknown', monthName: 'Mes Desconegut' };
+            }
+
+            const day = dayMatch[1];
+            const monthRaw = monthMatch[1];
+
+            let monthName;
+            switch(monthRaw.toLowerCase()) {
+                case "juliol": monthName = "Juliol"; break;
+                case "agost": monthName = "Agost"; break;
+                case "setembre": monthName = "Setembre"; break;
+                default: monthName = 'Mes Desconegut';
+            }
+
+            return { day, monthName };
+        }
+        
+        // Helper function to check if an event is in the past
+        function isPastEvent(event) {
+            const monthMap = {
+                "juliol": 6,
+                "agost": 7,
+                "setembre": 8
+            };
+            const dateMatch = event.dateTime.match(/\b(\d+)\s+d'(juliol|agost|setembre)/i);
+            const timeMatch = event.dateTime.match(/(\d{2}):(\d{2}) - (\d{2}):(\d{2})/);
+
+            if (!dateMatch || !timeMatch) return false;
+
+            const day = parseInt(dateMatch[1]);
+            const month = monthMap[dateMatch[2].toLowerCase()];
+            const year = 2025; // Hardcoded year based on the data
+            const hour = parseInt(timeMatch[3]); // Use end time
+            const minute = parseInt(timeMatch[4]); // Use end time
+
+            const eventDate = new Date(year, month, day, hour, minute);
+            const now = new Date();
+
+            return eventDate < now;
+        }
+
+        // Function to generate a Google Maps link
+        function generateGoogleMapsLink(location) {
+            const baseUrl = 'https://www.google.com/maps/search/?api=1&query=';
+            return baseUrl + encodeURIComponent(location);
+        }
 
         // Function to create an event card HTML string
-        function createEventCard(event) {
-            return `
-                <div class="bg-gray-800 rounded-lg shadow-lg p-4 mb-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex items-center space-x-4" data-event-name="${event.name}">
+        function createEventCard(event, day) {
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'flex items-center space-x-4';
+
+            // Check if the event is in the past and apply classes
+            const isPast = isPastEvent(event);
+            const cardClasses = isPast
+                ? "bg-gray-800 rounded-lg shadow-lg p-4 mb-4 flex flex-grow items-center space-x-4 opacity-50 transform scale-95"
+                : "bg-gray-800 rounded-lg shadow-lg p-4 mb-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4 event-card";
+
+            cardWrapper.innerHTML = `
+                <div class="w-12 text-center flex-shrink-0">
+                    <span class="bg-indigo-600 text-white font-bold py-2 px-3 rounded-full text-xl">${day}</span>
+                </div>
+                <div class="${cardClasses}" data-event-name="${event.name}">
                     <img
                         src="${event.imageUrl}"
                         alt="${event.name}"
@@ -184,6 +302,14 @@
                     </div>
                 </div>
             `;
+            // Add click listener programmatically only for non-past events
+            if (!isPast) {
+                 cardWrapper.querySelector('.event-card').addEventListener('click', () => {
+                    showEventDetail(event);
+                });
+            }
+
+            return cardWrapper;
         }
 
         // Function to display the event detail modal
@@ -195,7 +321,11 @@
             modalLocation.textContent = event.location;
             modalPrice.textContent = event.price;
             modalType.textContent = event.type;
-            modalDescription.textContent = event.description;
+            modalDescription.textContent = event.description.replace(/\\n/g, '\n'); // Replace escaped newlines
+            
+            // Set the Google Maps link
+            modalMapLink.href = generateGoogleMapsLink(event.location);
+
             eventDetailModal.classList.remove('hidden');
         }
 
@@ -204,56 +334,62 @@
             eventDetailModal.classList.add('hidden');
         }
 
-        // Group events by day and render them
-        function renderEvents() {
-            // Clear previous content
+        // Function to filter and render events
+        function renderEvents(filter = 'all') {
             eventsContainer.innerHTML = '';
 
-            // Group events by day
-            const eventsGroupedByDay = eventsData.reduce((acc, event) => {
-                // Extract the day number from the dateTime string
-                const dateMatch = event.dateTime.match(/(\d+)\s+d'agost/);
-                const day = dateMatch ? dateMatch[1] : 'Unknown Day'; // Fallback for safety
-                if (!acc[day]) {
-                    acc[day] = [];
-                }
-                acc[day].push(event);
-                return acc;
-            }, {});
-
-            // Sort days numerically
-            const sortedDays = Object.keys(eventsGroupedByDay).sort((a, b) => parseInt(a) - parseInt(b));
-
-            sortedDays.forEach(day => {
-                // Create a div for the day group
-                const dayGroupDiv = document.createElement('div');
-                dayGroupDiv.innerHTML = `<h2 class="text-4xl font-bold text-indigo-400 mb-4 ml-2">${day}</h2>`;
-
-                // Create a div for the cards within this day
-                const cardsContainer = document.createElement('div');
-                cardsContainer.className = 'space-y-4';
-
-                eventsGroupedByDay[day].forEach(event => {
-                    const eventCardHtml = createEventCard(event);
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = eventCardHtml;
-                    const cardElement = tempDiv.firstElementChild; // Get the actual card element
-
-                    // Add click listener to each card
-                    cardElement.addEventListener('click', () => showEventDetail(event));
-                    cardsContainer.appendChild(cardElement);
+            let filteredEvents = allEventsData;
+            if (filter === 'august-september') {
+                filteredEvents = allEventsData.filter(event => {
+                    const { monthName } = getMonthAndDay(event.dateTime);
+                    return monthName === 'Agost' || monthName === 'Setembre';
                 });
+            }
 
-                dayGroupDiv.appendChild(cardsContainer);
-                eventsContainer.appendChild(dayGroupDiv);
+            const eventsGroupedByMonth = {};
+            filteredEvents.forEach(event => {
+                const { day, monthName } = getMonthAndDay(event.dateTime);
+                if (!eventsGroupedByMonth[monthName]) {
+                    eventsGroupedByMonth[monthName] = {};
+                }
+                if (!eventsGroupedByMonth[monthName][day]) {
+                    eventsGroupedByMonth[monthName][day] = [];
+                }
+                eventsGroupedByMonth[monthName][day].push(event);
+            });
+
+            const monthOrder = ["Juliol", "Agost", "Setembre"];
+            const sortedMonths = Object.keys(eventsGroupedByMonth).sort((a, b) => {
+                const indexA = monthOrder.indexOf(a);
+                const indexB = monthOrder.indexOf(b);
+                if (indexA === -1 || indexB === -1) {
+                    return a.localeCompare(b);
+                }
+                return indexA - indexB;
+            });
+
+            sortedMonths.forEach(monthName => {
+                const monthGroupDiv = document.createElement('div');
+                monthGroupDiv.className = "mb-8";
+                monthGroupDiv.innerHTML = `<h2 class="text-5xl font-extrabold text-white mb-6">${monthName} 2025</h2>`;
+
+                const sortedDays = Object.keys(eventsGroupedByMonth[monthName]).sort((a, b) => parseInt(a) - parseInt(b));
+
+                sortedDays.forEach(day => {
+                    eventsGroupedByMonth[monthName][day].forEach(event => {
+                        const cardElement = createEventCard(event, day);
+                        monthGroupDiv.appendChild(cardElement);
+                    });
+                });
+                eventsContainer.appendChild(monthGroupDiv);
             });
         }
 
-        // Add event listener to close modal button
         closeModalBtn.addEventListener('click', hideEventDetail);
+        showAllBtn.addEventListener('click', () => renderEvents('all'));
+        filterBtn.addEventListener('click', () => renderEvents('august-septembre'));
 
-        // Render events when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', renderEvents);
+        document.addEventListener('DOMContentLoaded', () => renderEvents('all'));
     </script>
 </body>
 </html>
