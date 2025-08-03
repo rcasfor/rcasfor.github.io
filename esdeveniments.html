@@ -7,7 +7,12 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom scrollbar for better aesthetics, optional */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar for better aesthetics */
         .overflow-y-auto::-webkit-scrollbar {
             width: 8px;
         }
@@ -28,28 +33,28 @@
 
     <div class="max-w-3xl mx-auto">
         <header class="flex items-center mb-8">
-            <span class="text-indigo-400 text-4xl mr-4">&#x1F4C5;</span> <!-- Calendar icon -->
+            <span class="text-indigo-400 text-4xl mr-4">&#x1F4C5;</span> <!-- Icona de calendari -->
             <h1 class="text-5xl font-extrabold text-white">Esdeveniments d'estiu</h1>
         </header>
 
         <div class="mb-8 flex space-x-4">
-            <button id="show-all-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105">
+            <button id="show-all-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
                 Tots els Esdeveniments
             </button>
-            <button id="filter-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105">
+            <button id="filter-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
                 Agost i Setembre
             </button>
         </div>
 
         <div id="events-container" class="space-y-6">
-            <!-- Event cards will be rendered here by JavaScript -->
+            <p id="loading-message" class="text-center text-xl text-indigo-400 animate-pulse">Carregant esdeveniments...</p>
         </div>
     </div>
 
     <!-- Event Detail Modal -->
     <div id="event-detail-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full p-6 relative border border-indigo-700 max-h-[90vh] overflow-y-auto">
-            <button id="close-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold">
+            <button id="close-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold transition-colors duration-200">
                 &times;
             </button>
             <img id="modal-image" src="" alt="" class="w-40 h-40 rounded-full object-cover mx-auto mb-6 border-4 border-indigo-500" onerror="this.onerror=null;this.src='https://placehold.co/160x160/6366f1/ffffff?text=Event';">
@@ -68,135 +73,20 @@
                         Veure al mapa
                     </a>
                 </div>
-                <p id="modal-description" class="whitespace-pre-wrap"></p>
+                <p id="modal-description" class="mt-4"></p>
             </div>
         </div>
     </div>
 
     <script>
-        // Data for events
-        const allEventsData = [
-            {
-                name: "Jam de Swing a Altafulla",
-                dateTime: "Divendres, 1 d'agost, 20:00 - 22:30",
-                location: "Club Marítim Altafulla",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
-            },
-            {
-                name: "Jam de Swing a Altafulla",
-                dateTime: "Divendres, 8 d'agost, 20:00 - 22:31",
-                location: "Club Marítim Altafulla",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
-            },
-            {
-                name: "Jam de Swing a Altafulla",
-                dateTime: "Divendres, 15 d'agost, 20:00 - 22:30",
-                location: "Club Marítim Altafulla",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
-            },
-            {
-                name: "Jam de Swing a Altafulla",
-                dateTime: "Divendres, 22 d'agost, 20:00 - 22:33",
-                location: "Club Marítim Altafulla",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
-            },
-            {
-                name: "Jam de Swing a Altafulla",
-                dateTime: "Divendres, 29 d'agost, 20:00 - 22:34",
-                location: "Club Marítim Altafulla",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/maritim.jpg",
-                description: "Com cada divendres es fa la ballada de swing al Maritim d'Altafulla.\\nConsumició mínima obligatòria"
-            },
-            {
-                name: "Festa Major de Constantí",
-                dateTime: "Divendres, 1 d'agost, 23:00 - 01:00",
-                location: "Ajuntament de Constantí",
-                price: "Gratuït",
-                type: "Festa",
-                imageUrl: "https://rcasfor.github.io/festa%20major%20constanti.png",
-                description: "Que comenci la festa!\\n\\nAquest divendres 1 d'agost, la Festa Major de Constantí et convida a una nit inoblidable. Estàs preparat/da per ballar?\\nA partir de les 23 h, l'orquestra Saturno serà l'encarregada de posar la banda sonora a una nit de música i diversió. Ens trobarem just davant de l'Ajuntament de Constantí.\\nVolem que t'uneixis a nosaltres per gaudir d'una nit d'estiu amb la millor música, bona companyia i l'ambient inigualable de la Festa Major. T'ho perdràs?"
-            },
-            {
-                name: "Vespes & Swing",
-                dateTime: "Dissabte, 9 d'agost, 12:30 - 15:30",
-                location: "Picamoixons",
-                price: "Gratuït",
-                type: "Swing",
-                imageUrl: "https://rcasfor.github.io/vespes%20&%20swing.jpg",
-                description: "🎉Dissabte 9 d’Agost a Picamoixons\\n\\n12:30-Classe oberta de Lindy Hop a càrrec d'Alba Regada\\n13:00-Jam amb la banda The Walking Bounce Swing💃\\n\\n🍴Dinar 10€\\nVermut + Entrepà de llonganissa a la brasa i beguda ( vi, aigua i gaseosa)\\n📞 Reserva per dinar al 626731751 Imprescindible\\nData límit reserves 5 d’agost\\n\\n👉 Local social de Picamoixons: C/ Sant Isidre, n.3\\n\\n🛵 Podreu gaudir de l’exposició de Vespes dels companys moteros que participen a la 1a Trobada Vespera de Picamoixons"
-            },
-            {
-                name: "Taller gratuït de Lindy Hop Ohana Fest (Garòs)",
-                dateTime: "Dissabte, 9 d'agost, 18:00 - 19:30",
-                location: "Garós",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/ohana%20fest.jpg",
-                description: "Lindy Hop a la Vall d'Aran: Mou-te a Garòs!\\n\\nAquest divendres 9 d'agost, el festival Ohana Fest et porta una proposta irresistible: un taller de Lindy Hopa càrrec d'Elisabet Alonso & Roger Casasampere per a tots els públics a la bonica localitat de Garòs, a la Vall d'Aran.\\nViu la màgia d'aprendre els passos d'aquest ball històric en un entorn idíl·lic: la Plaça Major de Garòs, un dels pobles més singulars de la vall, amb les seves cases de pedra i la seva arquitectura tradicional que respira història i tranquil·litat.\\nNo cal que tinguis experiència prèvia, només ganes de passar-t'ho bé! Uneix-te a nosaltres a les 18 h i deixa't portar pel ritme. Serà una tarda fantàstica per connectar amb la música, la gent i l'encant de la Vall d'Aran.\\nNo t'ho perdis! T'esperem a la plaça per ballar junts."
-            },
-            {
-                name: "Jam de Swing a Senan",
-                dateTime: "Divendres, 15 d'agost, 22:30 - 23:55",
-                location: "Senan",
-                price: "Gratuït",
-                type: "Swing Jam",
-                imageUrl: "https://rcasfor.github.io/logo%20BASIC%20.jpg",
-                description: "Jam de Ball a Senan: Vine a Moure l'Esquelet!\\n\\nAquest 15 d'agost, la Conca de Barberà et convida a una nit màgica. Vine a la primera Jam de ball que celebrem a Senan, un poble amb unes vistes espectaculars i envoltat d'un patrimoni històric i cultural increïble.\\nBallarem a la Plaça Antoni Saltó, just darrere de l'Ajuntament. L'energia la posarà el nostre DJ, que farà sonar la millor música per a tots els gustos.\\nApunta't la data i l'hora: a les 22.30 h. No hi ha millor manera de gaudir de la nit d'estiu que ballant a l'aire lliure, fent nous amics i deixant-te portar per la música.\\nT'esperem per viure una nit inoblidable! No t'ho perdis!"
-            },
-            {
-                name: "Swing Jam Session",
-                dateTime: "31 de juliol de 2025, de 22:00 a 23:30",
-                location: "Av. del Mar, 1",
-                price: "Cal registrar-se enviant un correu a info@alfacs.com",
-                type: "Jam de swing",
-                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/Diseno-sin-titulo-24.png",
-                description: "Continuant amb la programació d’espectacles musicals d’estiu del Camping Alfacs, el proper 31 de juliol gaudirem al Salina Beach Club d’una jam de swing a càrrec de Walking Bounce Swing en la seva versió de trio i un repertori variat dirigit a tots els hoppers perquè no parin de ballar."
-            },
-            {
-                name: "Swing Jam Session",
-                dateTime: "14 d'agost de 2025, de 22:00 a 23:30",
-                location: "Av. del Mar, 1",
-                price: "Tancada",
-                type: "Jam de swing en format quartet",
-                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/Diseno-sin-titulo-24.png",
-                description: "Walking Bounce Swing amb la veu d’Anna Amaré ens tornen a acompanyar durant una nit plena de Swing, aquest cop en format quartet. Us esperem al Salines Beach Club del Camping Alfacs a partir de les 22.00H per una jam plena de ritme i ball!"
-            },
-            {
-                name: "BLUES DANCE Jam Session",
-                dateTime: "22 d'agost de 2025, de 22:00 a 00:00",
-                location: "Av. de la Diputació s/n, Cambrils",
-                price: "Cal registrar-se enviant un correu a ms@modoswing.com",
-                type: "Jam Session de Blues Dance",
-                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/blues-10.png",
-                description: "Vine a gaudir del blues amb nosaltres a Cambrils! El proper divendres 22 d’agost vine a ballar i a sentir la màgia del blues en una jam session davant del mar! Sigui que siguis un ballarí experimentat o simplement t’agrada moure’t al ritme de la música, aquesta és la teva oportunitat per connectar amb altres apassionats del ball i passar-ho en gran! T’esperem a la Torre de l’Esquirol de Cambrils a les 22’00h. No et perdis aquesta oportunitat per viure una nit plena de música, ball i diversió! Porta les teves sabates de ball i uneix-te a nosaltres per una nit inoblidable."
-            },
-            {
-                name: "Swing Jam Session",
-                dateTime: "13 de setembre de 2025, de 21:00 a 23:00",
-                location: "Carrer Masia, 3, 43520 Roquetes, Tarragona, España",
-                price: "Cal registrar-se enviant un correu a ms@modoswing.com",
-                type: "Jam de swing",
-                imageUrl: "https://modoswing.com/wp-content/uploads/2025/07/vins.png",
-                description: "Quarta edició de la Fira Gastronòmica del Vi i dels Productes Locals ‘De Roquetes Vi i Punyetes baixo’, amb la participació de cellers i carpes amb tapes i productes locals, a més de moltes actuacions musicals. Aquest any el swing tornarà a formar part d’aquest esdeveniment amb música en viu per a poder ballar tots els ritmes per ballar! Ens espera Walking Bounce Swing a les 22’00h del dissabte 13 de setembre a l’Hort de Cruells de Roquetes amb la seves versions per gaudir ballant del Lindy Hop, Blues i altres…"
-            }
-        ];
+        // URL de la teva Google Sheet per a exportació en format CSV
+        const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
 
-        // Get DOM elements
+        let allEventsData = [];
+
+        // Obtenció dels elements del DOM
         const eventsContainer = document.getElementById('events-container');
+        const loadingMessage = document.getElementById('loading-message');
         const eventDetailModal = document.getElementById('event-detail-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const showAllBtn = document.getElementById('show-all-btn');
@@ -211,76 +101,126 @@
         const modalDescription = document.getElementById('modal-description');
         const modalMapLink = document.getElementById('modal-map-link');
 
-        // Helper function to extract month and day from dateTime string
-        function getMonthAndDay(dateTimeString) {
-            const dayMatch = dateTimeString.match(/\b(\d+)\b/);
-            const monthMatch = dateTimeString.match(/\b(juliol|agost|setembre)\b/i);
-
-            if (!dayMatch || !monthMatch) {
-                console.warn("Could not parse date from:", dateTimeString);
-                return { day: 'Unknown', monthName: 'Mes Desconegut' };
+        /**
+         * Parses CSV text from the Google Sheet and converts it into a JSON array of objects.
+         * This version is more robust for multiline fields and commas within quotes.
+         * @param {string} csv - The raw CSV text content.
+         * @returns {Array<Object>} An array of event objects.
+         */
+        function parseCsvToJson(csv) {
+            const data = [];
+            const lines = csv.trim().split(/\r?\n/);
+            if (lines.length <= 1) {
+                console.error("CSV data has no events.");
+                return data;
             }
 
-            const day = dayMatch[1];
-            const monthRaw = monthMatch[1];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
+            const regex = /("((?:[^"]|"")*)")|([^,]+)/g;
+            
+            let i = 1;
+            while (i < lines.length) {
+                let fullLine = lines[i];
+                let numQuotes = (fullLine.match(/"/g) || []).length;
+                
+                // Si el nombre de cometes és senar, és un camp de diverses línies
+                while (numQuotes % 2 !== 0 && i + 1 < lines.length) {
+                    i++;
+                    fullLine += '\n' + lines[i];
+                    numQuotes = (fullLine.match(/"/g) || []).length;
+                }
+                
+                const values = [];
+                let match;
+                while ((match = regex.exec(fullLine)) !== null) {
+                    let value = match[2] !== undefined ? match[2] : match[3];
+                    if (value === undefined) value = '';
+                    values.push(value.replace(/""/g, '"').trim());
+                }
 
-            let monthName;
-            switch(monthRaw.toLowerCase()) {
-                case "juliol": monthName = "Juliol"; break;
-                case "agost": monthName = "Agost"; break;
-                case "setembre": monthName = "Setembre"; break;
-                default: monthName = 'Mes Desconegut';
+                if (values.length === headers.length) {
+                    const event = {};
+                    headers.forEach((header, index) => {
+                        let val = values[index] || '';
+                        switch (header) {
+                            case "Nom de l'esdeveniment": event.name = val; break;
+                            case "Data i hora": event.dateTime = val; break;
+                            case "Lloc": event.location = val; break;
+                            case "Entrada": event.price = val; break;
+                            case "Tipus": event.type = val; break;
+                            case "url_imatge": event.imageUrl = val; break;
+                            case "Descripció": event.description = val; break;
+                            case "Data final": event.endDate = val; break;
+                            case "Hora final": event.endTime = val; break;
+                            case "Data inici": event.startDate = val; break;
+                        }
+                    });
+                    data.push(event);
+                } else {
+                    console.error("Skipping malformed row:", fullLine);
+                }
+                i++;
             }
+            return data;
+        }
 
-            return { day, monthName };
+        /**
+         * Fetches event data from Google Sheets and parses it.
+         * @returns {Promise<Array<Object>>} A promise that resolves to an array of event objects.
+         */
+        async function fetchAndParseEvents() {
+            try {
+                const response = await fetch(sheetsUrl);
+                const csvText = await response.text();
+                return parseCsvToJson(csvText);
+            } catch (error) {
+                console.error("Error en carregar les dades de l'esdeveniment:", error);
+                loadingMessage.textContent = 'Error en carregar les dades. Si us plau, intenta-ho de nou més tard.';
+                return [];
+            }
+        }
+
+        // Helper per obtenir el mes i el dia per a la capçalera i la targeta
+        function getMonthAndDay(dateString) {
+            if (!dateString) return {};
+            const [day, month, year] = dateString.split('/');
+            const monthNames = ["Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+            const monthName = monthNames[parseInt(month, 10) - 1];
+            return { day: parseInt(day, 10), monthName, year: parseInt(year, 10) };
         }
         
-        // Helper function to check if an event is in the past
+        // Funció per comprovar si un esdeveniment ja ha passat, utilitzant la data i hora final
         function isPastEvent(event) {
-            const monthMap = {
-                "juliol": 6,
-                "agost": 7,
-                "setembre": 8
-            };
-            const dateMatch = event.dateTime.match(/\b(\d+)\s+d'(juliol|agost|setembre)/i);
-            const timeMatch = event.dateTime.match(/(\d{2}):(\d{2}) - (\d{2}):(\d{2})/);
-
-            if (!dateMatch || !timeMatch) return false;
-
-            const day = parseInt(dateMatch[1]);
-            const month = monthMap[dateMatch[2].toLowerCase()];
-            const year = 2025; // Hardcoded year based on the data
-            const hour = parseInt(timeMatch[3]); // Use end time
-            const minute = parseInt(timeMatch[4]); // Use end time
-
-            const eventDate = new Date(year, month, day, hour, minute);
+            if (!event.endDate || !event.endTime) return false;
+            const [day, month, year] = event.endDate.split('/');
+            const [hour, minute] = event.endTime.split(':');
+            const eventDate = new Date(year, parseInt(month, 10) - 1, day, hour, minute);
             const now = new Date();
-
             return eventDate < now;
         }
 
-        // Function to generate a Google Maps link
+        // Funció per generar un enllaç de Google Maps
         function generateGoogleMapsLink(location) {
             const baseUrl = 'https://www.google.com/maps/search/?api=1&query=';
             return baseUrl + encodeURIComponent(location);
         }
 
-        // Function to create an event card HTML string
+        // Funció per crear la targeta HTML d'un esdeveniment
         function createEventCard(event, day) {
             const cardWrapper = document.createElement('div');
             cardWrapper.className = 'flex items-center space-x-4';
 
-            // Check if the event is in the past and apply classes
             const isPast = isPastEvent(event);
             const cardClasses = isPast
-                ? "bg-gray-800 rounded-lg shadow-lg p-4 mb-4 flex flex-grow items-center space-x-4 opacity-50 transform scale-95"
-                : "bg-gray-800 rounded-lg shadow-lg p-4 mb-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4 event-card";
+                ? "bg-gray-800 rounded-lg shadow-lg p-4 flex flex-grow items-center space-x-4 opacity-50 transform scale-95"
+                : "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4 event-card";
 
             cardWrapper.innerHTML = `
                 <div class="w-12 text-center flex-shrink-0">
                     <span class="bg-indigo-600 text-white font-bold py-2 px-3 rounded-full text-xl">${day}</span>
                 </div>
-                <div class="${cardClasses}" data-event-name="${event.name}">
+                <div class="${cardClasses}">
                     <img
                         src="${event.imageUrl}"
                         alt="${event.name}"
@@ -302,9 +242,9 @@
                     </div>
                 </div>
             `;
-            // Add click listener programmatically only for non-past events
+            // Afegeix el listener de clic només si l'esdeveniment no ha passat
             if (!isPast) {
-                 cardWrapper.querySelector('.event-card').addEventListener('click', () => {
+                cardWrapper.querySelector('.event-card').addEventListener('click', () => {
                     showEventDetail(event);
                 });
             }
@@ -312,7 +252,7 @@
             return cardWrapper;
         }
 
-        // Function to display the event detail modal
+        // Funció per mostrar el modal de detalls de l'esdeveniment
         function showEventDetail(event) {
             modalImage.src = event.imageUrl;
             modalImage.alt = event.name;
@@ -321,75 +261,104 @@
             modalLocation.textContent = event.location;
             modalPrice.textContent = event.price;
             modalType.textContent = event.type;
-            modalDescription.textContent = event.description.replace(/\\n/g, '\n'); // Replace escaped newlines
             
-            // Set the Google Maps link
+            // Substituïm els salts de línia amb etiquetes <br> per a una correcta visualització.
+            modalDescription.innerHTML = (event.description || '').replace(/(\r\n|\n)/g, '<br>');
+            
             modalMapLink.href = generateGoogleMapsLink(event.location);
-
             eventDetailModal.classList.remove('hidden');
         }
 
-        // Function to hide the event detail modal
+        // Funció per amagar el modal
         function hideEventDetail() {
             eventDetailModal.classList.add('hidden');
         }
 
-        // Function to filter and render events
+        // Funció principal per filtrar i renderitzar els esdeveniments
         function renderEvents(filter = 'all') {
             eventsContainer.innerHTML = '';
-
+            
             let filteredEvents = allEventsData;
             if (filter === 'august-september') {
                 filteredEvents = allEventsData.filter(event => {
-                    const { monthName } = getMonthAndDay(event.dateTime);
+                    if (!event.startDate) return false;
+                    const { monthName } = getMonthAndDay(event.startDate);
                     return monthName === 'Agost' || monthName === 'Setembre';
                 });
             }
 
+            // Ordenar esdeveniments per data d'inici
+            filteredEvents.sort((a, b) => {
+                if (!a.startDate || !b.startDate) return 0;
+                const [d1, m1, y1] = a.startDate.split('/');
+                const [d2, m2, y2] = b.startDate.split('/');
+                return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+            });
+
+            // Agrupar els esdeveniments per mes
             const eventsGroupedByMonth = {};
             filteredEvents.forEach(event => {
-                const { day, monthName } = getMonthAndDay(event.dateTime);
-                if (!eventsGroupedByMonth[monthName]) {
-                    eventsGroupedByMonth[monthName] = {};
+                if (!event.startDate) return;
+                const { day, monthName, year } = getMonthAndDay(event.startDate);
+                const monthYear = `${monthName} ${year}`;
+                if (!eventsGroupedByMonth[monthYear]) {
+                    eventsGroupedByMonth[monthYear] = {};
                 }
-                if (!eventsGroupedByMonth[monthName][day]) {
-                    eventsGroupedByMonth[monthName][day] = [];
+                if (!eventsGroupedByMonth[monthYear][day]) {
+                    eventsGroupedByMonth[monthYear][day] = [];
                 }
-                eventsGroupedByMonth[monthName][day].push(event);
+                eventsGroupedByMonth[monthYear][day].push(event);
             });
 
             const monthOrder = ["Juliol", "Agost", "Setembre"];
             const sortedMonths = Object.keys(eventsGroupedByMonth).sort((a, b) => {
-                const indexA = monthOrder.indexOf(a);
-                const indexB = monthOrder.indexOf(b);
-                if (indexA === -1 || indexB === -1) {
-                    return a.localeCompare(b);
-                }
+                const monthA = a.split(' ')[0];
+                const monthB = b.split(' ')[0];
+                const indexA = monthOrder.indexOf(monthA);
+                const indexB = monthOrder.indexOf(monthB);
                 return indexA - indexB;
             });
-
-            sortedMonths.forEach(monthName => {
+            
+            sortedMonths.forEach(monthYear => {
                 const monthGroupDiv = document.createElement('div');
                 monthGroupDiv.className = "mb-8";
-                monthGroupDiv.innerHTML = `<h2 class="text-5xl font-extrabold text-white mb-6">${monthName} 2025</h2>`;
+                monthGroupDiv.innerHTML = `<h2 class="text-3xl sm:text-5xl font-extrabold text-white mb-6">${monthYear}</h2>`;
 
-                const sortedDays = Object.keys(eventsGroupedByMonth[monthName]).sort((a, b) => parseInt(a) - parseInt(b));
+                const sortedDays = Object.keys(eventsGroupedByMonth[monthYear]).sort((a, b) => parseInt(a) - parseInt(b));
 
                 sortedDays.forEach(day => {
-                    eventsGroupedByMonth[monthName][day].forEach(event => {
+                    eventsGroupedByMonth[monthYear][day].forEach(event => {
                         const cardElement = createEventCard(event, day);
                         monthGroupDiv.appendChild(cardElement);
                     });
                 });
                 eventsContainer.appendChild(monthGroupDiv);
             });
+            
+            if (filteredEvents.length === 0) {
+                eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
+            }
         }
 
+        // Listeners d'esdeveniments
         closeModalBtn.addEventListener('click', hideEventDetail);
         showAllBtn.addEventListener('click', () => renderEvents('all'));
-        filterBtn.addEventListener('click', () => renderEvents('august-septembre'));
+        filterBtn.addEventListener('click', () => renderEvents('august-september'));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !eventDetailModal.classList.contains('hidden')) {
+                hideEventDetail();
+            }
+        });
 
-        document.addEventListener('DOMContentLoaded', () => renderEvents('all'));
+        // Càrrega inicial de les dades i renderització
+        async function init() {
+            loadingMessage.classList.remove('hidden');
+            allEventsData = await fetchAndParseEvents();
+            loadingMessage.classList.add('hidden');
+            renderEvents('all');
+        }
+        
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
