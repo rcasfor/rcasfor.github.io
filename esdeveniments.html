@@ -38,12 +38,7 @@
         </header>
 
         <div class="mb-8 flex space-x-4">
-            <button id="show-all-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
-                Tots els Esdeveniments
-            </button>
-            <button id="filter-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
-                Agost i Setembre
-            </button>
+            <!-- S'han eliminat els botons "Tots els Esdeveniments" i "Agost i Setembre" -->
         </div>
 
         <div id="events-container" class="space-y-6">
@@ -140,7 +135,6 @@
         };
 
         // Coordenades geogràfiques de les ubicacions (simulades per a la demostració)
-        // Aquestes dades haurien de venir d'una API de geocodificació
         const locationCoordinates = {
             "Club Marítim Altafulla": { lat: 41.1492, lon: 1.3857 },
             "Ajuntament de Constantí": { lat: 41.1770, lon: 1.2291 },
@@ -157,13 +151,11 @@
         const loadingMessage = document.getElementById('loading-message');
         const eventDetailModal = document.getElementById('event-detail-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        const showAllBtn = document.getElementById('show-all-btn');
-        const filterBtn = document.getElementById('filter-btn');
         const toggleFilterMenuBtn = document.getElementById('toggle-filter-menu');
         const floatingMenu = document.getElementById('floating-menu');
         const filterTypeButtons = document.querySelectorAll('.filter-type-btn');
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
-        const filterModeButtons = document.querySelectorAll('.filter-mode-btn'); // Nou selector per als botons de mode de filtre
+        const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
         const locationStatus = document.getElementById('location-status');
 
         const modalImage = document.getElementById('modal-image');
@@ -177,7 +169,6 @@
 
         /**
          * Parses CSV text from the Google Sheet and converts it into a JSON array of objects.
-         * This version is more robust for multiline fields and commas within quotes.
          * @param {string} csv - The raw CSV text content.
          * @returns {Array<Object>} An array of event objects.
          */
@@ -265,21 +256,17 @@
         }
         
         /**
-         * Checks if an event is in the past, but within the last 7 days.
+         * Checks if an event is in the past, based on its end date.
          * @param {Object} event - The event object.
-         * @returns {boolean} True if the event ended within the last 7 days, false otherwise.
+         * @returns {boolean} True if the event has already ended, false otherwise.
          */
-        function isRecentPastEvent(event) {
+        function isEventPast(event) {
             if (!event.endDate || !event.endTime) return false;
             const [day, month, year] = event.endDate.split('/');
             const [hour, minute] = event.endTime.split(':');
             const eventDate = new Date(year, parseInt(month, 10) - 1, day, hour, minute);
             const now = new Date();
-            
-            const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-            
-            return eventDate < now && diffInMs <= sevenDaysInMs;
+            return eventDate < now;
         }
 
         /**
@@ -300,20 +287,6 @@
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
 
-        /**
-         * Checks if an event is in the future.
-         * @param {Object} event - The event object.
-         * @returns {boolean} True if the event is in the future, false otherwise.
-         */
-        function isFutureEvent(event) {
-            if (!event.startDate || !event.endTime) return true;
-            const [day, month, year] = event.startDate.split('/');
-            const [hour, minute] = event.endTime.split(':');
-            const eventDate = new Date(year, parseInt(month, 10) - 1, day, hour, minute);
-            const now = new Date();
-            return eventDate >= now;
-        }
-        
         // Funció per generar un enllaç de Google Maps
         function generateGoogleMapsLink(location) {
             const baseUrl = 'https://www.google.com/maps/search/?api=1&query=';
@@ -322,20 +295,20 @@
 
         // Funció per crear la targeta HTML d'un esdeveniment
         function createEventCard(event, day) {
-            const isPast = isOldPastEvent(event);
-            const isRecent = isRecentPastEvent(event);
-            
-            const cardClasses = isPast
-                ? "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4 opacity-50"
-                : "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4";
-
             const cardWrapper = document.createElement('div');
-            cardWrapper.className = 'flex items-center space-x-4';
+            // Aplica la classe 'opacity-50' directament al contenidor principal si l'esdeveniment ja ha passat
+            const isPast = isEventPast(event);
+            const cardWrapperClasses = `flex items-center space-x-4 ${isPast ? 'opacity-50' : ''}`;
+            cardWrapper.className = cardWrapperClasses;
+            
+            // Les classes de la targeta interior ja no necessiten la lògica d'opacitat
+            const cardContentClasses = "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4";
+
             cardWrapper.innerHTML = `
                 <div class="w-12 text-center flex-shrink-0">
                     <span class="bg-indigo-600 text-white font-bold py-2 px-3 rounded-full text-xl">${day}</span>
                 </div>
-                <div class="${cardClasses}">
+                <div class="${cardContentClasses}">
                     <img
                         src="${event.imageUrl}"
                         alt="${event.name}"
@@ -358,7 +331,7 @@
                 </div>
             `;
             // Add click listener programmatically
-            cardWrapper.querySelector('.flex-grow').addEventListener('click', () => {
+            cardWrapper.querySelector('div:last-child').addEventListener('click', () => {
                 showEventDetail(event);
             });
 
@@ -576,18 +549,6 @@
         // LISTENERS D'ESDEVENIMENTS
         closeModalBtn.addEventListener('click', hideEventDetail);
         
-        // Listeners per als filtres de dates principals
-        showAllBtn.addEventListener('click', () => {
-            currentFilterType = 'all';
-            currentFilterMode = 'upcoming';
-            renderEvents('all');
-        });
-        filterBtn.addEventListener('click', () => {
-            currentFilterType = 'all';
-            currentFilterMode = 'upcoming';
-            renderEvents('august-september');
-        });
-
         // Listeners per al filtre flotant
         toggleFilterMenuBtn.addEventListener('click', () => {
             floatingMenu.classList.toggle('hidden');
@@ -642,7 +603,7 @@
             loadingMessage.classList.add('hidden');
             // Intentar obtenir la ubicació de l'usuari a l'inici
             getUserLocation();
-            renderEvents('all');
+            renderEvents();
         }
         
         document.addEventListener('DOMContentLoaded', init);
