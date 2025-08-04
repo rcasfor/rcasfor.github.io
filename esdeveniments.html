@@ -27,7 +27,18 @@
         .overflow-y-auto::-webkit-scrollbar-thumb:hover {
             background: #4f46e5; /* hover:bg-indigo-700 */
         }
+
+        /* Leaflet Map styles */
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
     </style>
+    <!-- Leaflet CSS for the map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
 </head>
 <body class="bg-gray-900 font-sans text-gray-100 p-4 sm:p-8">
 
@@ -112,11 +123,24 @@
                     <button class="sort-order-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-sort-order="proximity">Proximitat</button>
                 </div>
             </div>
+            
+            <button id="show-map-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                Veure Mapa
+            </button>
             <p id="location-status" class="text-xs text-gray-500"></p>
         </div>
     </div>
 
+    <!-- Map Modal -->
+    <div id="map-modal" class="fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center p-4 z-50 hidden">
+        <button id="close-map-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold transition-colors duration-200 z-[1001]">&times;</button>
+        <div id="map" class="w-full h-full rounded-lg shadow-2xl"></div>
+    </div>
 
+    <!-- Leaflet JS for the map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20n6+A4p3J55W8l7S9F6C/95W3E3w+d96yX2B1C6/nE="
+     crossorigin=""></script>
     <script>
         // URL de la teva Google Sheet per a exportació en format CSV
         const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
@@ -126,6 +150,7 @@
         let currentFilterType = 'all';
         let currentSortOrder = 'date';
         let currentFilterMode = 'upcoming'; // 'upcoming' o 'past'
+        let myMap = null;
 
         // Mapeig de tipus d'esdeveniments per als botons de filtre
         const eventTypeMapping = {
@@ -141,7 +166,7 @@
             "Picamoixons": { lat: 41.3129, lon: 1.3090 },
             "Garós": { lat: 42.7483, lon: 0.8874 },
             "Senan": { lat: 41.4429, lon: 1.1578 },
-            "Av. del Mar, 1": { lat: 40.5905, lon: 0.6125 },
+            "Av. del Mar, 1, 43520 L'Ametlla de Mar, Tarragona, España": { lat: 40.8653, lon: 0.7675 },
             "Av. de la Diputació s/n, Cambrils": { lat: 41.0772, lon: 1.0543 },
             "Carrer Masia, 3, 43520 Roquetes, Tarragona, España": { lat: 40.8037, lon: 0.5255 }
         };
@@ -157,6 +182,9 @@
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
         const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
         const locationStatus = document.getElementById('location-status');
+        const showMapBtn = document.getElementById('show-map-btn');
+        const mapModal = document.getElementById('map-modal');
+        const closeMapBtn = document.getElementById('close-map-btn');
 
         const modalImage = document.getElementById('modal-image');
         const modalName = document.getElementById('modal-name');
@@ -359,6 +387,63 @@
         function hideEventDetail() {
             eventDetailModal.classList.add('hidden');
         }
+        
+        /**
+         * Initializes and displays the map with markers for all upcoming events.
+         */
+        function showMap() {
+            mapModal.classList.remove('hidden');
+            const mapContainer = document.getElementById('map');
+            
+            // Comprova si la llibreria Leaflet està disponible
+            if (typeof L === 'undefined') {
+                mapContainer.innerHTML = `<div class="p-4 text-center text-red-500">Error: La llibreria del mapa no s'ha pogut carregar. Si us plau, comprova la teva connexió a Internet.</div>`;
+                return;
+            }
+
+            // Si el mapa ja està inicialitzat, només cal invalidar la seva mida
+            if (myMap !== null) {
+                 myMap.invalidateSize();
+            } else {
+                try {
+                    // Inicialitza el mapa, centrat a Catalunya
+                    myMap = L.map('map').setView([41.5, 1.7], 9);
+                    
+                    // Afegeix una capa base d'OpenStreetMap
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    }).addTo(myMap);
+                } catch (error) {
+                    console.error("Error al inicialitzar el mapa:", error);
+                    mapContainer.innerHTML = `<div class="p-4 text-center text-red-500">
+                        S'ha produït un error en carregar el mapa.
+                        <br>Causa: ${error.message}
+                        <br>Si us plau, torna-ho a intentar més tard o recarrega la pàgina.
+                    </div>`;
+                    return;
+                }
+            }
+
+            // Afegeix marcadors per a tots els esdeveniments futurs
+            allEventsData.forEach(event => {
+                if (!isEventPast(event) && locationCoordinates[event.location]) {
+                    const coords = locationCoordinates[event.location];
+                    const marker = L.marker([coords.lat, coords.lon]).addTo(myMap);
+                    marker.bindPopup(`<b>${event.name}</b><br>${event.location}`).openPopup();
+                }
+            });
+            
+            // Assegura que el mapa s'ajusti correctament a la mida del modal després que es mostri
+            setTimeout(() => {
+                myMap.invalidateSize();
+            }, 100);
+
+        }
+
+        // Funció per amagar el modal del mapa
+        function hideMap() {
+            mapModal.classList.add('hidden');
+        }
 
         // FUNCIÓ PER OBTENIR LA UBICACIÓ DE L'USUARI (si el navegador ho permet)
         function getUserLocation() {
@@ -548,6 +633,7 @@
 
         // LISTENERS D'ESDEVENIMENTS
         closeModalBtn.addEventListener('click', hideEventDetail);
+        closeMapBtn.addEventListener('click', hideMap); // Listener per tancar el mapa
         
         // Listeners per al filtre flotant
         toggleFilterMenuBtn.addEventListener('click', () => {
@@ -595,6 +681,8 @@
                 renderEvents();
             });
         });
+        
+        showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
 
         // Càrrega inicial de les dades i renderització
         async function init() {
