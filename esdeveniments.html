@@ -70,6 +70,10 @@
                 <p><strong>Lloc:</strong> <span id="modal-location"></span></p>
                 <p><strong>Entrada:</strong> <span id="modal-price"></span></p>
                 <p><strong>Tipus:</strong> <span id="modal-type"></span></p>
+                <!-- New section for registration URL -->
+                <p id="modal-tickets-row" class="hidden">
+                    <strong>Inscripció:</strong> <a id="modal-tickets-url" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 underline"></a>
+                </p>
                 <div class="mt-4">
                     <a id="modal-map-link" href="#" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-200">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -196,6 +200,8 @@
         const modalType = document.getElementById('modal-type');
         const modalDescription = document.getElementById('modal-description');
         const modalMapLink = document.getElementById('modal-map-link');
+        const modalTicketsRow = document.getElementById('modal-tickets-row'); // New element
+        const modalTicketsUrl = document.getElementById('modal-tickets-url'); // New element
 
         /**
          * Funció per normalitzar cadenes de text per a que la cerca sigui més fiable.
@@ -261,6 +267,7 @@
                             case "Tipus": event.type = val; break;
                             case "url_imatge": event.imageUrl = val; break;
                             case "Descripció": event.description = val; break;
+                            case "Url_entrades": event.ticketsUrl = val; break; // New field
                         }
                     });
                     data.push(event);
@@ -393,6 +400,16 @@
             modalDescription.innerHTML = (event.description || '').replace(/(\r\n|\n)/g, '<br>');
             
             modalMapLink.href = generateGoogleMapsLink(event.location);
+
+            // Handle tickets URL
+            if (event.ticketsUrl && event.ticketsUrl.trim() !== '') {
+                modalTicketsUrl.href = event.ticketsUrl;
+                modalTicketsUrl.textContent = event.ticketsUrl;
+                modalTicketsRow.classList.remove('hidden');
+            } else {
+                modalTicketsRow.classList.add('hidden');
+            }
+
             eventDetailModal.classList.remove('hidden');
         }
 
@@ -423,7 +440,7 @@
 
             // Si el mapa ja està inicialitzat, només cal invalidar la seva mida per redimensionar-lo
             if (myMap !== null) {
-                 myMap.invalidateSize();
+                myMap.invalidateSize();
             } else {
                 try {
                     // Inicialitza el mapa, centrat a Catalunya
@@ -456,7 +473,7 @@
                     }
                     eventsByLocation[normalizedLocation].push(event);
                 } else if (!isEventPast(event) && event.name) {
-                     console.log(`Ubicació no trobada per a l'esdeveniment "${event.name}" a "${event.location}"`);
+                    console.log(`Ubicació no trobada per a l'esdeveniment "${event.name}" a "${event.location}"`);
                 }
             });
 
@@ -569,10 +586,10 @@
                 }
             });
             filterModeButtons.forEach(btn => {
-                 btn.classList.remove('bg-indigo-600');
-                 if (btn.dataset.filterMode === mode) {
-                     btn.classList.add('bg-indigo-600');
-                 }
+                btn.classList.remove('bg-indigo-600');
+                if (btn.dataset.filterMode === mode) {
+                    btn.classList.add('bg-indigo-600');
+                }
             });
         }
         
@@ -638,15 +655,15 @@
             // Agrupar els esdeveniments per mes o per proximitat
             if (currentSortOrder === 'proximity' && userLocation) {
                 if (filteredEvents.length > 0) {
-                     const proximityGroupDiv = document.createElement('div');
-                     proximityGroupDiv.className = "mb-8";
-                     proximityGroupDiv.innerHTML = `<h2 class="text-3xl sm:text-5xl font-extrabold text-white mb-6">Resultats per proximitat</h2>`;
-                     filteredEvents.forEach(event => {
+                    const proximityGroupDiv = document.createElement('div');
+                    proximityGroupDiv.className = "mb-8";
+                    proximityGroupDiv.innerHTML = `<h2 class="text-3xl sm:text-5xl font-extrabold text-white mb-6">Resultats per proximitat</h2>`;
+                    filteredEvents.forEach(event => {
                         const { day } = getMonthAndDay(event.startDate);
                         const cardElement = createEventCard(event, day);
                         proximityGroupDiv.appendChild(cardElement);
-                     });
-                     eventsContainer.appendChild(proximityGroupDiv);
+                    });
+                    eventsContainer.appendChild(proximityGroupDiv);
                 }
             } else {
                 const eventsGroupedByMonth = {};
@@ -721,16 +738,16 @@
                         locationStatus.classList.add('text-gray-500');
                         await getUserLocation(); // Espera a obtenir la ubicació
                         if (userLocation) {
-                             currentSortOrder = newSortOrder;
-                             renderEvents();
+                            currentSortOrder = newSortOrder;
+                            renderEvents();
                         } else {
                             // Si no hi ha ubicació, tornem a l'ordenació per data
                             currentSortOrder = 'date';
                             renderEvents();
                         }
                     } else {
-                         currentSortOrder = newSortOrder;
-                         renderEvents();
+                        currentSortOrder = newSortOrder;
+                        renderEvents();
                     }
                 } else {
                     currentSortOrder = newSortOrder;
