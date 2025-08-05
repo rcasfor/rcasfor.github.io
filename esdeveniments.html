@@ -36,8 +36,8 @@
         }
     </style>
     <!-- Leaflet CSS for the map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
+     xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
      crossorigin=""/>
 </head>
 <body class="bg-gray-900 font-sans text-gray-100 p-4 sm:p-8">
@@ -138,8 +138,8 @@
     </div>
 
     <!-- Leaflet JS for the map -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20n6+A4p3J55W8l7S9F6C/95W3E3w+d96yX2B1C6/nE="
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"
+     xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
      crossorigin=""></script>
     <script>
         // URL de la teva Google Sheet per a exportació en format CSV
@@ -158,7 +158,7 @@
             'Blues': ['Jam Session de Blues Dance', 'Blues'],
             'Revetlla': ['Festa', 'Festa Major', 'revetlla']
         };
-
+        
         // Coordenades geogràfiques de les ubicacions (simulades per a la demostració)
         const locationCoordinates = {
             "Club Marítim Altafulla": { lat: 41.1492, lon: 1.3857 },
@@ -166,9 +166,11 @@
             "Picamoixons": { lat: 41.3129, lon: 1.3090 },
             "Garós": { lat: 42.7483, lon: 0.8874 },
             "Senan": { lat: 41.4429, lon: 1.1578 },
-            "Av. del Mar, 1, 43520 L'Ametlla de Mar, Tarragona, España": { lat: 40.8653, lon: 0.7675 },
+            "Av. Mar, 1, 43530 Alcanar, Tarragona": { lat: 40.8653, lon: 0.7675 },
             "Av. de la Diputació s/n, Cambrils": { lat: 41.0772, lon: 1.0543 },
-            "Carrer Masia, 3, 43520 Roquetes, Tarragona, España": { lat: 40.8037, lon: 0.5255 }
+            "Carrer Masia, 3, 43520 Roquetes, Tarragona, España": { lat: 40.8037, lon: 0.5255 },
+            "Carrer de la Presó, 4, 1º 2ª, 43201 Reus, Tarragona": { lat: 41.1541, lon: 1.1091 },
+            "Plaça del Portal, 3, 43460 Alcover, Tarragona": { lat: 41.2858, lon: 1.2536 }
         };
 
         // Obtenció dels elements del DOM
@@ -194,6 +196,17 @@
         const modalType = document.getElementById('modal-type');
         const modalDescription = document.getElementById('modal-description');
         const modalMapLink = document.getElementById('modal-map-link');
+
+        /**
+         * Funció per normalitzar cadenes de text per a que la cerca sigui més fiable.
+         * @param {string} str - La cadena a normalitzar.
+         * @returns {string} La cadena normalitzada.
+         */
+        function normalizeString(str) {
+            if (!str) return '';
+            // Retorna la cadena sense modificar, ja que la coincidència ha de ser exacta amb les claus de l'objecte
+            return str.trim();
+        }
 
         /**
          * Parses CSV text from the Google Sheet and converts it into a JSON array of objects.
@@ -239,14 +252,15 @@
                         switch (header) {
                             case "Nom de l'esdeveniment": event.name = val; break;
                             case "Data i hora": event.dateTime = val; break;
+                            case "Data inici": event.startDate = val; break;
+                            case "Hora inici": event.startTime = val; break;
+                            case "Data final": event.endDate = val; break;
+                            case "Hora final": event.endTime = val; break;
                             case "Lloc": event.location = val; break;
                             case "Entrada": event.price = val; break;
                             case "Tipus": event.type = val; break;
                             case "url_imatge": event.imageUrl = val; break;
                             case "Descripció": event.description = val; break;
-                            case "Data final": event.endDate = val; break;
-                            case "Hora final": event.endTime = val; break;
-                            case "Data inici": event.startDate = val; break;
                         }
                     });
                     data.push(event);
@@ -341,8 +355,7 @@
                         src="${event.imageUrl}"
                         alt="${event.name}"
                         class="w-24 h-24 rounded-full object-cover border-2 border-indigo-500 flex-shrink-0"
-                        onerror="this.onerror=null;this.src='https://placehold.co/96x96/6366f1/ffffff?text=Event';"
-                    />
+                        onerror="this.onerror=null;this.src='https://placehold.co/96x96/6366f1/ffffff?text=Event';">
                     <div class="flex-grow">
                         <h3 class="text-xl font-semibold text-white mb-1">${event.name}</h3>
                         <p class="text-indigo-300 text-sm">${event.dateTime}</p>
@@ -392,16 +405,23 @@
          * Initializes and displays the map with markers for all upcoming events.
          */
         function showMap() {
-            mapModal.classList.remove('hidden');
             const mapContainer = document.getElementById('map');
+            mapModal.classList.remove('hidden');
+
+            // Neteja qualsevol contingut d'error anterior
+            mapContainer.innerHTML = '';
             
             // Comprova si la llibreria Leaflet està disponible
             if (typeof L === 'undefined') {
-                mapContainer.innerHTML = `<div class="p-4 text-center text-red-500">Error: La llibreria del mapa no s'ha pogut carregar. Si us plau, comprova la teva connexió a Internet.</div>`;
+                mapContainer.innerHTML = `<div class="p-4 text-center text-red-500">
+                    Error greu: La llibreria del mapa (Leaflet) no s'ha pogut carregar.
+                    <br>Això pot ser degut a una connexió a Internet inestable o a un problema amb els scripts externs.
+                    <br>Si us plau, recarrega la pàgina.
+                </div>`;
                 return;
             }
 
-            // Si el mapa ja està inicialitzat, només cal invalidar la seva mida
+            // Si el mapa ja està inicialitzat, només cal invalidar la seva mida per redimensionar-lo
             if (myMap !== null) {
                  myMap.invalidateSize();
             } else {
@@ -423,17 +443,61 @@
                     return;
                 }
             }
-
-            // Afegeix marcadors per a tots els esdeveniments futurs
+            
+            const markers = [];
+            
+            // Agrupa els esdeveniments per ubicació
+            const eventsByLocation = {};
             allEventsData.forEach(event => {
-                if (!isEventPast(event) && locationCoordinates[event.location]) {
-                    const coords = locationCoordinates[event.location];
-                    const marker = L.marker([coords.lat, coords.lon]).addTo(myMap);
-                    marker.bindPopup(`<b>${event.name}</b><br>${event.location}`).openPopup();
+                const normalizedLocation = event.location;
+                if (!isEventPast(event) && locationCoordinates[normalizedLocation]) {
+                    if (!eventsByLocation[normalizedLocation]) {
+                        eventsByLocation[normalizedLocation] = [];
+                    }
+                    eventsByLocation[normalizedLocation].push(event);
+                } else if (!isEventPast(event) && event.name) {
+                     console.log(`Ubicació no trobada per a l'esdeveniment "${event.name}" a "${event.location}"`);
                 }
             });
+
+            // Afegeix marcadors per cada ubicació amb un o més esdeveniments
+            for (const loc in eventsByLocation) {
+                const eventsAtLocation = eventsByLocation[loc];
+                const coords = locationCoordinates[loc];
+                
+                const marker = L.marker([coords.lat, coords.lon]).addTo(myMap);
+                markers.push(marker);
+
+                // Crea el contingut del popup dinàmicament
+                let popupContent = `<div class="space-y-2">`;
+                eventsAtLocation.forEach(event => {
+                    popupContent += `
+                        <div class="flex items-center space-x-2">
+                            <img src="${event.imageUrl}" alt="${event.name}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-indigo-500" onerror="this.onerror=null;this.src='https://placehold.co/64x64/6366f1/ffffff?text=Event';">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-900">${event.name}</h4>
+                                <p class="text-xs text-indigo-600">${event.dateTime}</p>
+                                <p class="text-xs text-gray-500">${event.location}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                popupContent += `</div>`;
+                
+                marker.bindPopup(popupContent);
+                // Si només hi ha un esdeveniment, mostra el popup automàticament
+                if (eventsAtLocation.length === 1) {
+                    marker.openPopup();
+                }
+            }
             
-            // Assegura que el mapa s'ajusti correctament a la mida del modal després que es mostri
+            // Ajusta el mapa per a que tots els marcadors siguin visibles
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                myMap.fitBounds(group.getBounds());
+            }
+
+            // Assegura que el mapa s'ajusti correctament a la mida del modal
             setTimeout(() => {
                 myMap.invalidateSize();
             }, 100);
@@ -547,8 +611,8 @@
             if (currentSortOrder === 'proximity' && userLocation) {
                 // Ordenar per proximitat
                 filteredEvents.sort((a, b) => {
-                    const aCoords = locationCoordinates[a.location];
-                    const bCoords = locationCoordinates[b.location];
+                    const aCoords = locationCoordinates[normalizeString(a.location)];
+                    const bCoords = locationCoordinates[normalizeString(b.location)];
 
                     if (!aCoords) return 1;
                     if (!bCoords) return -1;
