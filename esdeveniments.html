@@ -58,8 +58,46 @@
             <h1 class="text-5xl font-extrabold text-white">Esdeveniments d'estiu</h1>
         </header>
 
-        <div class="mb-8 flex space-x-4">
-            <!-- S'han eliminat els botons "Tots els Esdeveniments" i "Agost i Setembre" -->
+        <!-- Collapsible Filter Header -->
+        <div id="filter-header" class="sticky top-0 bg-gray-800 p-4 rounded-lg shadow-xl mb-8 z-30">
+            <div class="flex justify-between items-center cursor-pointer" id="toggle-filter-header">
+                <h3 class="text-xl font-bold text-white">Filtres i ordenació</h3>
+                <svg id="filter-chevron" class="w-6 h-6 text-white transform transition-transform duration-300 rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+            <div id="filter-content" class="mt-4 space-y-4 hidden">
+                <div>
+                    <p class="text-gray-400 mb-2">Tipus d'esdeveniment</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="all">Tots</button>
+                        <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="Swing">Swing</button>
+                        <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="Blues">Blues</button>
+                        <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="Revetlla">Balls de Revetlla</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-gray-400 mb-2">Visibilitat d'esdeveniments</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="filter-mode-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-mode="upcoming">Propers i Recents</button>
+                        <button class="filter-mode-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-mode="past">Esdeveniments Passats</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-gray-400 mb-2">Ordenar per</p>
+                    <div class="flex gap-2">
+                        <button class="sort-order-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-sort-order="date">Data</button>
+                        <button class="sort-order-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-sort-order="proximity">Proximitat</button>
+                    </div>
+                </div>
+                
+                <button id="show-map-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    Veure Mapa
+                </button>
+                <p id="status-message" class="text-xs text-gray-500"></p>
+            </div>
         </div>
 
         <div id="events-container" class="space-y-6">
@@ -95,53 +133,6 @@
                 </div>
                 <p id="modal-description" class="mt-4"></p>
             </div>
-        </div>
-    </div>
-
-    <!-- Floating Filter Menu -->
-    <div class="fixed bottom-8 right-8 z-40">
-        <button id="toggle-filter-menu" class="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transform transition duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
-            <!-- Icona de filtre -->
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h8"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15h2"></path>
-            </svg>
-        </button>
-
-        <div id="floating-menu" class="absolute bottom-full right-0 w-64 bg-gray-800 p-4 rounded-lg shadow-xl mb-4 space-y-4 hidden">
-            <h3 class="text-xl font-bold text-white mb-2">Filtres i ordenació</h3>
-            
-            <div>
-                <p class="text-gray-400 mb-2">Tipus d'esdeveniment</p>
-                <div class="flex flex-wrap gap-2">
-                    <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="all">Tots</button>
-                    <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="Swing">Swing</button>
-                    <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="Blues">Blues</button>
-                    <button class="filter-type-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-type="Revetlla">Balls de Revetlla</button>
-                </div>
-            </div>
-
-            <div>
-                <p class="text-gray-400 mb-2">Visibilitat d'esdeveniments</p>
-                <div class="flex flex-wrap gap-2">
-                    <button class="filter-mode-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-mode="upcoming">Propers i Recents</button>
-                    <button class="filter-mode-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-mode="past">Esdeveniments Passats</button>
-                </div>
-            </div>
-
-            <div>
-                <p class="text-gray-400 mb-2">Ordenar per</p>
-                <div class="flex gap-2">
-                    <button class="sort-order-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-sort-order="date">Data</button>
-                    <button class="sort-order-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-sort-order="proximity">Proximitat</button>
-                </div>
-            </div>
-            
-            <button id="show-map-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900">
-                Veure Mapa
-            </button>
-            <p id="location-status" class="text-xs text-gray-500"></p>
         </div>
     </div>
 
@@ -192,8 +183,13 @@
         const loadingMessage = document.getElementById('loading-message');
         const eventDetailModal = document.getElementById('event-detail-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        const toggleFilterMenuBtn = document.getElementById('toggle-filter-menu');
-        const floatingMenu = document.getElementById('floating-menu');
+        // Removed toggleFilterMenuBtn
+        // Removed floatingMenu
+        const filterHeader = document.getElementById('filter-header');
+        const toggleFilterHeaderBtn = document.getElementById('toggle-filter-header');
+        const filterContent = document.getElementById('filter-content');
+        const filterChevron = document.getElementById('filter-chevron');
+
         const filterTypeButtons = document.querySelectorAll('.filter-type-btn');
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
         const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
@@ -726,9 +722,10 @@
         closeModalBtn.addEventListener('click', hideEventDetail);
         closeMapBtn.addEventListener('click', hideMap); // Listener per tancar el mapa
         
-        // Listeners per al filtre flotant
-        toggleFilterMenuBtn.addEventListener('click', () => {
-            floatingMenu.classList.toggle('hidden');
+        // Listener per a la capçalera desplegable del filtre
+        toggleFilterHeaderBtn.addEventListener('click', () => {
+            filterContent.classList.toggle('hidden');
+            filterChevron.classList.toggle('rotate-180'); // Rotate chevron icon
         });
 
         filterTypeButtons.forEach(button => {
@@ -744,7 +741,7 @@
                 if (newSortOrder === 'proximity') {
                     if (!userLocation) {
                         locationStatus.textContent = 'Obtenint la teva ubicació...';
-                        locationStatus.classList.remove('text-red-500', 'text-green-500');
+                        locationStatus.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
                         locationStatus.classList.add('text-gray-500');
                         await getUserLocation(); // Espera a obtenir la ubicació
                         if (userLocation) {
