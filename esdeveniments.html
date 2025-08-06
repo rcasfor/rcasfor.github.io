@@ -118,6 +118,10 @@
                 <p><strong>Lloc:</strong> <span id="modal-location"></span></p>
                 <p><strong>Entrada:</strong> <span id="modal-price"></span></p>
                 <p><strong>Tipus:</strong> <span id="modal-type"></span></p>
+                <!-- New field for Organizer -->
+                <p id="modal-organizer-row" class="hidden">
+                    <strong>Organitzador:</strong> <span id="modal-organizer"></span>
+                </p>
                 <!-- New section for registration URL -->
                 <p id="modal-tickets-row" class="hidden">
                     <strong>Inscripció:</strong> <a id="modal-tickets-url" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 underline"></a>
@@ -193,7 +197,7 @@
         const filterTypeButtons = document.querySelectorAll('.filter-type-btn');
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
         const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
-        const locationStatus = document.getElementById('status-message'); // Changed ID to status-message
+        const statusMessageElement = document.getElementById('status-message'); // Changed ID to status-message
         const showMapBtn = document.getElementById('show-map-btn');
         const mapModal = document.getElementById('map-modal');
         const closeMapBtn = document.getElementById('close-map-btn');
@@ -208,6 +212,8 @@
         const modalMapLink = document.getElementById('modal-map-link');
         const modalTicketsRow = document.getElementById('modal-tickets-row'); // New element
         const modalTicketsUrl = document.getElementById('modal-tickets-url'); // New element
+        const modalOrganizerRow = document.getElementById('modal-organizer-row'); // New element
+        const modalOrganizer = document.getElementById('modal-organizer'); // New element
 
         /**
          * Funció per normalitzar cadenes de text per a que la cerca sigui més fiable.
@@ -290,7 +296,8 @@
                             case "Tipus": event.type = val; break;
                             case "url_imatge": event.imageUrl = val; break;
                             case "Descripció": event.description = val; break;
-                            case "Url_entrades": event.ticketsUrl = val; break; // New field
+                            case "Url_entrades": event.ticketsUrl = val; break;
+                            case "Organitza": event.organizer = val; break; // New field
                         }
                     });
                     data.push(event);
@@ -428,6 +435,14 @@
             modalDescription.innerHTML = (event.description || '').replace(/(\r\n|\n)/g, '<br>');
             
             modalMapLink.href = generateGoogleMapsLink(event.location);
+
+            // Handle organizer field
+            if (event.organizer && event.organizer.trim() !== '') {
+                modalOrganizer.textContent = event.organizer;
+                modalOrganizerRow.classList.remove('hidden');
+            } else {
+                modalOrganizerRow.classList.add('hidden');
+            }
 
             // Handle tickets URL
             if (event.ticketsUrl && event.ticketsUrl.trim() !== '') {
