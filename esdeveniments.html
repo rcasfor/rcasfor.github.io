@@ -193,7 +193,7 @@
         const filterTypeButtons = document.querySelectorAll('.filter-type-btn');
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
         const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
-        const locationStatus = document.getElementById('location-status');
+        const locationStatus = document.getElementById('status-message'); // Changed ID to status-message
         const showMapBtn = document.getElementById('show-map-btn');
         const mapModal = document.getElementById('map-modal');
         const closeMapBtn = document.getElementById('close-map-btn');
@@ -218,6 +218,23 @@
             if (!str) return '';
             // Retorna la cadena sense modificar, ja que la coincidència ha de ser exacta amb les claus de l'objecte
             return str.trim();
+        }
+
+        /**
+         * Funció per mostrar missatges d'estat a l'usuari.
+         * @param {string} message - El missatge a mostrar.
+         * @param {string} type - El tipus de missatge ('info', 'success', 'error').
+         */
+        function logStatus(message, type = 'info') {
+            statusMessageElement.textContent = message;
+            statusMessageElement.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
+            if (type === 'success') {
+                statusMessageElement.classList.add('text-green-500');
+            } else if (type === 'error') {
+                statusMessageElement.classList.add('text-red-500');
+            } else {
+                statusMessageElement.classList.add('text-gray-500');
+            }
         }
 
         /**
@@ -359,6 +376,10 @@
             // Les classes de la targeta interior ja no necessiten la lògica d'opacitat
             const cardContentClasses = "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4";
 
+            // Add distance display if available
+            const distanceHtml = event.distance !== undefined ? 
+                `<p class="text-gray-400 text-sm mt-1">Distància: ${event.distance.toFixed(2)} km</p>` : '';
+
             cardWrapper.innerHTML = `
                 <div class="w-12 text-center flex-shrink-0">
                     <span class="bg-indigo-600 text-white font-bold py-2 px-3 rounded-full text-xl">${day}</span>
@@ -373,6 +394,7 @@
                         <h3 class="text-xl font-semibold text-white mb-1">${event.name}</h3>
                         <p class="text-indigo-300 text-sm">${event.dateTime}</p>
                         <p class="text-gray-400 text-sm">${event.location}</p>
+                        ${distanceHtml} <!-- Insert distance here -->
                         <div class="flex items-center mt-2">
                             <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full mr-2">
                                 ${event.price}
