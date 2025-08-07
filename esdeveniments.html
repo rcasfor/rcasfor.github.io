@@ -38,7 +38,7 @@
     <!-- Leaflet CSS for the map -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
      xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
-     crossorigin=""/>
+     crossorigin=""></script>
 
     <!-- Open Graph Meta Tags for social media sharing snippets -->
     <meta property="og:title" content="Esdeveniments d'Estiu">
@@ -111,7 +111,10 @@
             <button id="close-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold transition-colors duration-200">
                 &times;
             </button>
-            <img id="modal-image" src="" alt="" class="w-40 h-40 rounded-full object-cover mx-auto mb-6 border-4 border-indigo-500" onerror="this.onerror=null;this.src='https://placehold.co/160x160/6366f1/ffffff?text=Event';">
+            <!-- Enllaç per obrir la imatge a mida completa -->
+            <a id="modal-image-link" href="#" target="_blank" class="block">
+                <img id="modal-image" src="" alt="" class="w-full h-auto rounded-lg object-cover mb-6 border-4 border-indigo-500" onerror="this.onerror=null;this.src='https://placehold.co/160x160/6366f1/ffffff?text=Event';">
+            </a>
             <h2 id="modal-name" class="text-3xl font-extrabold text-white text-center mb-3"></h2>
             <p id="modal-datetime" class="text-indigo-400 text-lg text-center mb-4"></p>
             <div class="text-gray-300 space-y-3 pr-2">
@@ -154,6 +157,9 @@
         // URL de la teva Google Sheet per a exportació en format CSV
         const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
 
+        // API Key d'OpenCage
+        const openCageApiKey = '9932c1b4ea9e482e8d04d7c96ca535d2';
+        
         let allEventsData = [];
         let userLocation = null;
         let currentFilterType = 'all';
@@ -163,32 +169,19 @@
 
         // Mapeig de tipus d'esdeveniments per als botons de filtre
         const eventTypeMapping = {
-            'Swing': ['Swing Jam', 'Swing', 'Jam de swing', 'Jam de swing en format quartet'],
+            'Swing': ['Swing Jam', 'Swing', 'Jam de swing'],
             'Blues': ['Jam Session de Blues Dance', 'Blues'],
             'Revetlla': ['Festa', 'Festa Major', 'revetlla']
         };
         
-        // Coordenades geogràfiques de les ubicacions (simulades per a la demostració)
-        const locationCoordinates = {
-            "Club Marítim Altafulla": { lat: 41.1492, lon: 1.3857 },
-            "Ajuntament de Constantí": { lat: 41.1770, lon: 1.2291 },
-            "Picamoixons": { lat: 41.3129, lon: 1.3090 },
-            "Garós": { lat: 42.7483, lon: 0.8874 },
-            "Senan": { lat: 41.4429, lon: 1.1578 },
-            "Av. Mar, 1, 43530 Alcanar, Tarragona": { lat: 40.8653, lon: 0.7675 },
-            "Av. de la Diputació s/n, Cambrils": { lat: 41.0772, lon: 1.0543 },
-            "Carrer Masia, 3, 43520 Roquetes, Tarragona, España": { lat: 40.8037, lon: 0.5255 },
-            "Carrer de la Presó, 4, 1º 2ª, 43201 Reus, Tarragona": { lat: 41.1541, lon: 1.1091 },
-            "Plaça del Portal, 3, 43460 Alcover, Tarragona": { lat: 41.2858, lon: 1.2536 }
-        };
+        // Objecte per emmagatzemar les coordenades geocodificades de les ubicacions
+        let locationCoordinates = {};
 
         // Obtenció dels elements del DOM
         const eventsContainer = document.getElementById('events-container');
         const loadingMessage = document.getElementById('loading-message');
         const eventDetailModal = document.getElementById('event-detail-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        // Removed toggleFilterMenuBtn
-        // Removed floatingMenu
         const filterHeader = document.getElementById('filter-header');
         const toggleFilterHeaderBtn = document.getElementById('toggle-filter-header');
         const filterContent = document.getElementById('filter-content');
@@ -197,12 +190,13 @@
         const filterTypeButtons = document.querySelectorAll('.filter-type-btn');
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
         const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
-        const statusMessageElement = document.getElementById('status-message'); // Changed ID to status-message
+        const statusMessageElement = document.getElementById('status-message');
         const showMapBtn = document.getElementById('show-map-btn');
         const mapModal = document.getElementById('map-modal');
         const closeMapBtn = document.getElementById('close-map-btn');
 
         const modalImage = document.getElementById('modal-image');
+        const modalImageLink = document.getElementById('modal-image-link');
         const modalName = document.getElementById('modal-name');
         const modalDateTime = document.getElementById('modal-datetime');
         const modalLocation = document.getElementById('modal-location');
@@ -210,10 +204,10 @@
         const modalType = document.getElementById('modal-type');
         const modalDescription = document.getElementById('modal-description');
         const modalMapLink = document.getElementById('modal-map-link');
-        const modalTicketsRow = document.getElementById('modal-tickets-row'); // New element
-        const modalTicketsUrl = document.getElementById('modal-tickets-url'); // New element
-        const modalOrganizerRow = document.getElementById('modal-organizer-row'); // New element
-        const modalOrganizer = document.getElementById('modal-organizer'); // New element
+        const modalTicketsRow = document.getElementById('modal-tickets-row');
+        const modalTicketsUrl = document.getElementById('modal-tickets-url');
+        const modalOrganizerRow = document.getElementById('modal-organizer-row');
+        const modalOrganizer = document.getElementById('modal-organizer');
 
         /**
          * Funció per normalitzar cadenes de text per a que la cerca sigui més fiable.
@@ -222,10 +216,9 @@
          */
         function normalizeString(str) {
             if (!str) return '';
-            // Retorna la cadena sense modificar, ja que la coincidència ha de ser exacta amb les claus de l'objecte
             return str.trim();
         }
-
+        
         /**
          * Funció per mostrar missatges d'estat a l'usuari.
          * @param {string} message - El missatge a mostrar.
@@ -322,6 +315,35 @@
                 console.error("Error en carregar les dades de l'esdeveniment:", error);
                 loadingMessage.textContent = 'Error en carregar les dades. Si us plau, intenta-ho de nou més tard.';
                 return [];
+            }
+        }
+
+        /**
+         * Funció per geocodificar una adreça utilitzant l'API d'OpenCage.
+         * @param {string} address - L'adreça a geocodificar.
+         * @returns {Promise<Object|null>} Un objecte amb latitud i longitud o null si no es troba.
+         */
+        async function geocodeAddress(address) {
+            if (!openCageApiKey || !address) {
+                console.warn('API Key or address missing for geocoding.');
+                return null;
+            }
+            const encodedAddress = encodeURIComponent(address);
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodedAddress}&key=${openCageApiKey}&language=ca&pretty=1`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    const { lat, lng } = data.results[0].geometry;
+                    return { lat, lon: lng };
+                } else {
+                    console.warn(`No s'han trobat coordenades per a l'adreça: ${address}`);
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error en la geocodificació:', error);
+                return null;
             }
         }
 
@@ -425,6 +447,10 @@
         function showEventDetail(event) {
             modalImage.src = event.imageUrl;
             modalImage.alt = event.name;
+            // Set the href of the link to the image URL
+            if (modalImageLink) {
+                modalImageLink.href = event.imageUrl;
+            }
             modalName.textContent = event.name;
             modalDateTime.textContent = event.dateTime;
             modalLocation.textContent = event.location;
@@ -506,7 +532,7 @@
             
             const markers = [];
             
-            // Agrupa els esdeveniments per ubicació
+            // Agrupa els esdeveniments per ubicació, utilitzant les coordenades de l'objecte global
             const eventsByLocation = {};
             allEventsData.forEach(event => {
                 const normalizedLocation = event.location;
@@ -516,6 +542,7 @@
                     }
                     eventsByLocation[normalizedLocation].push(event);
                 } else if (!isEventPast(event) && event.name) {
+                    // Missatge informatiu a la consola, no hi ha cap error greu
                     console.log(`Ubicació no trobada per a l'esdeveniment "${event.name}" a "${event.location}"`);
                 }
             });
@@ -579,24 +606,24 @@
                                 lat: position.coords.latitude,
                                 lon: position.coords.longitude
                             };
-                            locationStatus.textContent = 'Ubicació obtinguda!';
-                            locationStatus.classList.remove('text-gray-500', 'text-red-500');
-                            locationStatus.classList.add('text-green-500');
+                            statusMessageElement.textContent = 'Ubicació obtinguda!';
+                            statusMessageElement.classList.remove('text-gray-500', 'text-red-500');
+                            statusMessageElement.classList.add('text-green-500');
                             resolve(userLocation);
                         },
                         (error) => {
                             console.error("Error obtenint la ubicació:", error);
-                            locationStatus.textContent = 'Error: Ubicació no disponible. Ordenant per data.';
-                            locationStatus.classList.remove('text-gray-500', 'text-green-500');
-                            locationStatus.classList.add('text-red-500');
+                            statusMessageElement.textContent = 'Error: Ubicació no disponible. Ordenant per data.';
+                            statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
+                            statusMessageElement.classList.add('text-red-500');
                             userLocation = null;
                             resolve(null); // Resoldre amb null si hi ha un error
                         }
                     );
                 } else {
-                    locationStatus.textContent = 'Geolocation no és suportada pel teu navegador.';
-                    locationStatus.classList.remove('text-gray-500', 'text-green-500');
-                    locationStatus.classList.add('text-red-500');
+                    statusMessageElement.textContent = 'Geolocation no és suportada pel teu navegador.';
+                    statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
+                    statusMessageElement.classList.add('text-red-500');
                     resolve(null);
                 }
             });
@@ -640,6 +667,14 @@
         async function renderEvents(initialFilter = 'all') {
             eventsContainer.innerHTML = '';
             
+            // Si estem ordenant per proximitat i ja tenim les dades de l'usuari
+            if (currentSortOrder === 'proximity' && userLocation) {
+                statusMessageElement.textContent = 'Ordenant per proximitat.';
+            } else {
+                 statusMessageElement.textContent = 'Ordenant per data.';
+            }
+
+
             let filteredEvents = allEventsData;
             
             // PRIMER FILTRE: PER VISIBILITAT (futurs/recents o passats antics)
@@ -777,9 +812,9 @@
                 const newSortOrder = button.dataset.sortOrder;
                 if (newSortOrder === 'proximity') {
                     if (!userLocation) {
-                        locationStatus.textContent = 'Obtenint la teva ubicació...';
-                        locationStatus.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
-                        locationStatus.classList.add('text-gray-500');
+                        statusMessageElement.textContent = 'Obtenint la teva ubicació...';
+                        statusMessageElement.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
+                        statusMessageElement.classList.add('text-gray-500');
                         await getUserLocation(); // Espera a obtenir la ubicació
                         if (userLocation) {
                             currentSortOrder = newSortOrder;
@@ -812,10 +847,24 @@
         // Càrrega inicial de les dades i renderització
         async function init() {
             loadingMessage.classList.remove('hidden');
+            statusMessageElement.textContent = 'Carregant dades...';
             allEventsData = await fetchAndParseEvents();
+            statusMessageElement.textContent = 'Dades carregades. Obtenint coordenades...';
+            
+            // Geocodificar totes les adreces un cop
+            for (const event of allEventsData) {
+                if (!locationCoordinates[event.location]) {
+                    const coords = await geocodeAddress(event.location);
+                    if (coords) {
+                        locationCoordinates[event.location] = coords;
+                    }
+                }
+            }
+            statusMessageElement.textContent = 'Coordenades obtingudes. Llest per a l\'acció.';
+
             loadingMessage.classList.add('hidden');
             // Intentar obtenir la ubicació de l'usuari a l'inici
-            getUserLocation();
+            await getUserLocation();
             renderEvents();
         }
         
