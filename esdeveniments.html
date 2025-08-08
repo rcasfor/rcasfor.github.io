@@ -145,6 +145,8 @@
                     </button>
                 </div>
                 <p id="modal-description" class="mt-4"></p>
+                <!-- Share confirmation message -->
+                <p id="share-confirmation-message" class="text-center text-sm mt-4 text-green-500 hidden">Enllaç copiat al porta-retalls!</p>
             </div>
         </div>
     </div>
@@ -217,6 +219,7 @@
         const modalTicketsUrl = document.getElementById('modal-tickets-url');
         const modalOrganizerRow = document.getElementById('modal-organizer-row');
         const modalOrganizer = document.getElementById('modal-organizer');
+        const shareConfirmationMessage = document.getElementById('share-confirmation-message');
 
         /**
          * Funció per normalitzar cadenes de text per a que la cerca sigui més fiable.
@@ -520,7 +523,11 @@
 
             try {
                 document.execCommand('copy');
-                logStatus('Enllaç copiat al porta-retalls!', 'success');
+                // Show confirmation message
+                shareConfirmationMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    shareConfirmationMessage.classList.add('hidden');
+                }, 3000);
             } catch (err) {
                 console.error('No s\'ha pogut copiar l\'enllaç:', err);
                 logStatus('Error: No s\'ha pogut copiar l\'enllaç.', 'error');
