@@ -383,7 +383,7 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+            const sevenDaysInMs = 3 * 24 * 60 * 60 * 1000;
             
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
@@ -607,7 +607,7 @@
                                 lon: position.coords.longitude
                             };
                             statusMessageElement.textContent = 'Ubicació obtinguda!';
-                            statusMessageElement.classList.remove('text-gray-500', 'text-red-500');
+                            statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
                             statusMessageElement.classList.add('text-green-500');
                             resolve(userLocation);
                         },
@@ -849,18 +849,19 @@
             loadingMessage.classList.remove('hidden');
             statusMessageElement.textContent = 'Carregant dades...';
             allEventsData = await fetchAndParseEvents();
-            statusMessageElement.textContent = 'Dades carregades. Obtenint coordenades...';
+            statusMessageElement.textContent = 'Dades carregades. Geocodificant ubicacions...';
             
-            // Geocodificar totes les adreces un cop
-            for (const event of allEventsData) {
-                if (!locationCoordinates[event.location]) {
-                    const coords = await geocodeAddress(event.location);
-                    if (coords) {
-                        locationCoordinates[event.location] = coords;
-                    }
+            // Geocodificar totes les adreces de forma asíncrona en paral·lel
+            const locationsToGeocode = [...new Set(allEventsData.map(event => event.location))];
+            const geocodePromises = locationsToGeocode.map(async (location) => {
+                const coords = await geocodeAddress(location);
+                if (coords) {
+                    locationCoordinates[location] = coords;
                 }
-            }
-            statusMessageElement.textContent = 'Coordenades obtingudes. Llest per a l\'acció.';
+            });
+            await Promise.all(geocodePromises);
+
+            statusMessageElement.textContent = 'Geocodificació completa. Llest per a l\'acció.';
 
             loadingMessage.classList.add('hidden');
             // Intentar obtenir la ubicació de l'usuari a l'inici
