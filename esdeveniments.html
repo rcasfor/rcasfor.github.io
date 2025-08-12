@@ -34,6 +34,14 @@
             width: 100%;
             border-radius: 0.5rem;
         }
+        /* Sublte pulsing animation for live events */
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulsing-card {
+            animation: pulse-subtle 2s ease-in-out infinite;
+        }
     </style>
     <!-- Leaflet CSS for the map -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
@@ -382,6 +390,52 @@
             const now = new Date();
             return eventDate < now;
         }
+        
+        /**
+         * Checks if an event is currently happening.
+         * @param {Object} event - The event object.
+         * @returns {boolean} True if the event is happening now, false otherwise.
+         */
+        function isEventInProgress(event) {
+            if (!event.startDate || !event.startTime || !event.endDate || !event.endTime) return false;
+            const now = new Date();
+            
+            const [startDay, startMonth, startYear] = event.startDate.split('/');
+            const [startHour, startMinute] = event.startTime.split(':');
+            const startDate = new Date(startYear, parseInt(startMonth, 10) - 1, startDay, startHour, startMinute);
+            
+            const [endDay, endMonth, endYear] = event.endDate.split('/');
+            const [endHour, endMinute] = event.endTime.split(':');
+            const endDate = new Date(endYear, parseInt(endMonth, 10) - 1, endDay, endHour, endMinute);
+            
+            return now >= startDate && now <= endDate;
+        }
+
+        /**
+         * Calculates the progress of an event in percentage.
+         * @param {Object} event - The event object.
+         * @returns {number} The progress in percentage (0-100).
+         */
+        function getEventProgress(event) {
+            if (!event.startDate || !event.startTime || !event.endDate || !event.endTime) return 0;
+            const now = new Date();
+            
+            const [startDay, startMonth, startYear] = event.startDate.split('/');
+            const [startHour, startMinute] = event.startTime.split(':');
+            const startDate = new Date(startYear, parseInt(startMonth, 10) - 1, startDay, startHour, startMinute);
+            
+            const [endDay, endMonth, endYear] = event.endDate.split('/');
+            const [endHour, endMinute] = event.endTime.split(':');
+            const endDate = new Date(endYear, parseInt(endMonth, 10) - 1, endDay, endHour, endMinute);
+            
+            const totalDuration = endDate.getTime() - startDate.getTime();
+            const elapsed = now.getTime() - startDate.getTime();
+
+            if (totalDuration <= 0) return 0;
+            
+            const progress = (elapsed / totalDuration) * 100;
+            return Math.min(100, Math.max(0, progress));
+        }
 
         /**
          * Checks if an event is in the old past (more than 7 days ago).
@@ -410,17 +464,29 @@
         // Funció per crear la targeta HTML d'un esdeveniment
         function createEventCard(event, day) {
             const cardWrapper = document.createElement('div');
-            // Aplica la classe 'opacity-50' directament al contenidor principal si l'esdeveniment ja ha passat
             const isPast = isEventPast(event);
-            const cardWrapperClasses = `flex items-center space-x-4 ${isPast ? 'opacity-50' : ''}`;
+            const isInProgress = isEventInProgress(event);
+            let extraClasses = '';
+            if (isPast && !isInProgress) {
+                extraClasses = 'opacity-50';
+            } else if (isInProgress) {
+                extraClasses = 'pulsing-card';
+            }
+            const cardWrapperClasses = `flex items-center space-x-4 ${extraClasses}`;
             cardWrapper.className = cardWrapperClasses;
             
-            // Les classes de la targeta interior ja no necessiten la lògica d'opacitat
             const cardContentClasses = "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4";
 
             // Add distance display if available
             const distanceHtml = event.distance !== undefined ? 
                 `<p class="text-gray-400 text-sm mt-1">Distància: ${event.distance.toFixed(2)} km</p>` : '';
+
+            // Add progress bar if event is in progress
+            const progress = isInProgress ? getEventProgress(event) : 0;
+            const progressBarHtml = isInProgress ? 
+                `<div class="w-full bg-gray-600 rounded-full h-2.5 mt-2 overflow-hidden">
+                    <div class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: ${progress}%;"></div>
+                </div>` : '';
 
             cardWrapper.innerHTML = `
                 <div class="w-12 text-center flex-shrink-0">
@@ -436,7 +502,8 @@
                         <h3 class="text-xl font-semibold text-white mb-1">${event.name}</h3>
                         <p class="text-indigo-300 text-sm">${event.dateTime}</p>
                         <p class="text-gray-400 text-sm">${event.location}</p>
-                        ${distanceHtml} <!-- Insert distance here -->
+                        ${distanceHtml}
+                        ${progressBarHtml}
                         <div class="flex items-center mt-2">
                             <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full mr-2">
                                 ${event.price}
