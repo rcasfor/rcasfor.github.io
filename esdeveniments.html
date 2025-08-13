@@ -186,8 +186,8 @@
         // Mapeig de tipus d'esdeveniments per als botons de filtre
         const eventTypeMapping = {
             'Swing': ['Swing Jam', 'Swing', 'Jam de swing'],
-            'Blues': ['Jam Session de Blues Dance', 'Blues'],
-            'Revetlla': ['Festa', 'Festa Major', 'revetlla']
+            'Blues': ['Blues'],
+            'Revetlla': ['Festa', 'Festa Major', 'revetlla', 'balls de Saló', 'bailes de salón']
         };
         
         // Objecte per emmagatzemar les coordenades geocodificades de les ubicacions
@@ -450,9 +450,10 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 3 * 24 * 60 * 60 * 1000;
+            // Aquesta línia era la que causava el problema, ja que 3 dies no és "passat".
+            const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
             
-            return eventDate < now && diffInMs > sevenDaysInMs;
+            return eventDate < now && diffInMs > threeDaysInMs;
         }
 
         // Funció per generar un enllaç de Google Maps
@@ -808,7 +809,7 @@
                 const typesToFilter = eventTypeMapping[currentFilterType] || [];
                 filteredEvents = filteredEvents.filter(event => {
                     const eventType = event.type || '';
-                    return typesToFilter.some(type => eventType.includes(type));
+                    return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
                 });
             } else {
                 // Filtre principal (Agost/Setembre) només si no hi ha filtre de tipus
@@ -877,7 +878,7 @@
                     eventsGroupedByMonth[monthYear][day].push(event);
                 });
 
-                const monthOrder = ["Juliol", "Agost", "Setembre"];
+                const monthOrder = ["Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
                 const sortedMonths = Object.keys(eventsGroupedByMonth).sort((a, b) => {
                     const monthA = a.split(' ')[0];
                     const monthB = b.split(' ')[0];
