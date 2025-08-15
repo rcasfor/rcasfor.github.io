@@ -42,6 +42,12 @@
         .pulsing-card {
             animation: pulse-subtle 3s ease-in-out infinite;
         }
+        /* Highlight for important events */
+        .highlight-card {
+            box-shadow: 0 0 15px rgba(0, 50, 200, 0.7);
+            border: 2px solid rgba(0, 50, 200, 0.7);
+            border-radius: 0.75rem; /* rounded-lg equivalent */
+        }
     </style>
     <!-- Leaflet CSS for the map -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
@@ -312,6 +318,7 @@
                             case "Descripció": event.description = val; break;
                             case "Url_entrades": event.ticketsUrl = val; break;
                             case "Organitza": event.organizer = val; break; // New field
+                            case "important": event.isImportant = val; break; // New field for "important"
                         }
                     });
                     data.push(event);
@@ -467,11 +474,14 @@
             const cardWrapper = document.createElement('div');
             const isPast = isEventPast(event);
             const isInProgress = isEventInProgress(event);
+            const isImportant = event.isImportant && event.isImportant.toLowerCase().includes('si');
             let extraClasses = '';
             if (isPast && !isInProgress) {
                 extraClasses = 'opacity-50';
             } else if (isInProgress) {
                 extraClasses = 'pulsing-card';
+            } else if (isImportant) {
+                extraClasses = 'highlight-card';
             }
             const cardWrapperClasses = `flex items-center space-x-4 ${extraClasses}`;
             cardWrapper.className = cardWrapperClasses;
@@ -811,15 +821,6 @@
                     const eventType = event.type || '';
                     return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
                 });
-            } else {
-                // Filtre principal (Agost/Setembre) només si no hi ha filtre de tipus
-                if (initialFilter === 'august-september') {
-                    filteredEvents = filteredEvents.filter(event => {
-                        if (!event.startDate) return false;
-                        const { monthName } = getMonthAndDay(event.startDate);
-                        return monthName === 'Agost' || monthName === 'Setembre';
-                    });
-                }
             }
 
             // APLICAR L'ORDENACIÓ
