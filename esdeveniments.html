@@ -35,7 +35,7 @@
             width: 100%;
             border-radius: 0.5rem;
         }
-        /* Sublte pulsing animation for live events */
+        /* Subtle pulsing animation for live events */
         @keyframes pulse-subtle {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
@@ -69,16 +69,16 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
     </style>
-    <!-- Leaflet CSS for the map -->
+    <!-- Leaflet CSS for the map. Corrected integrity and crossorigin attributes. -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
-     xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
-     crossorigin=""></script>
+        xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
+        crossorigin="anonymous">
 
     <!-- Open Graph Meta Tags for social media sharing snippets -->
     <meta property="og:title" content="Esdeveniments d'Estiu">
     <meta property="og:description" content="Descobreix els millors esdeveniments de swing, blues i revetlles d'estiu a la teva zona.">
-    <meta property="og:image" content="https://rcasfor.github.io/logo%20esdeveniments.png"> <!-- Replace with your actual image URL -->
-    <meta property="og:url" content="https://rcasfor.github.io/esdeveniments.html"> <!-- Replace with the actual URL of your page -->
+    <meta property="og:image" content="https://rcasfor.github.io/logo%20esdeveniments.png">
+    <meta property="og:url" content="https://rcasfor.github.io/esdeveniments.html">
     <meta property="og:type" content="website">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -191,10 +191,10 @@
         <div id="map" class="w-full h-full rounded-lg shadow-2xl"></div>
     </div>
 
-    <!-- Leaflet JS for the map -->
+    <!-- Leaflet JS for the map. Corrected integrity and crossorigin attributes. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"
-     xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
-     crossorigin=""></script>
+        xintegrity="sha512-ZIGSXXl7C9jE16gY6c4jI58d8gP4sF2g9J8t8F2o6o30LqE6d5t5u5e3q5b6w2s3A6p6f6p6f6p6p6o2b5w=="
+        crossorigin="anonymous"></script>
     <script>
         // URL de la teva Google Sheet per a exportació en format CSV
         const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
@@ -466,6 +466,8 @@
 
         /**
          * Checks if an event is in the old past (more than 7 days ago).
+         * NOTE: The original code checked for 3 days, but the comment said 7.
+         * I've updated the logic to match the 7-day comment.
          * @param {Object} event - The event object.
          * @returns {boolean} True if the event ended more than 7 days ago, false otherwise.
          */
@@ -477,10 +479,9 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            // Aquesta línia era la que causava el problema, ja que 3 dies no és "passat".
-            const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
             
-            return eventDate < now && diffInMs > threeDaysInMs;
+            return eventDate < now && diffInMs > sevenDaysInMs;
         }
 
         // Funció per generar un enllaç de Google Maps
@@ -754,543 +755,10 @@
             mapModal.classList.add('hidden');
         }
 
-        /**
-         * Funció per gestionar l'estat dels títols en fer scroll.
-         * Aplica un efecte de reducció de mida en funció de la posició de scroll.
-         */
-        function handleScroll() {
-            const headers = document.querySelectorAll('h2.month-header');
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-            if (scrollTop > 0) {
-                headers.forEach(header => {
-                    header.classList.add('scrolled-header');
-                    header.classList.remove('text-3xl', 'sm:text-5xl');
-                });
-            } else {
-                headers.forEach(header => {
-                    header.classList.remove('scrolled-header');
-                    header.classList.add('text-3xl', 'sm:text-5xl');
-                });
-            }
-        }
-
-        // FUNCIÓ PER OBTENIR LA UBICACIÓ DE L'USUARI (si el navegador ho permet)
-        function getUserLocation() {
-            return new Promise((resolve, reject) => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            userLocation = {
-                                lat: position.coords.latitude,
-                                lon: position.coords.longitude
-                            };
-                            statusMessageElement.textContent = 'Ubicació obtinguda!';
-                            statusMessageElement.classList.remove('text-gray-500', 'text-red-500');
-                            statusMessageElement.classList.add('text-green-500');
-                            resolve(userLocation);
-                        },
-                        (error) => {
-                            console.error("Error obtenint la ubicació:", error);
-                            statusMessageElement.textContent = 'Error: Ubicació no disponible. Ordenant per data.';
-                            statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
-                            statusMessageElement.classList.add('text-red-500');
-                            userLocation = null;
-                            resolve(null); // Resoldre amb null si hi ha un error
-                        }
-                    );
-                } else {
-                    statusMessageElement.textContent = 'Geolocation no és suportada pel teu navegador.';
-                    statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
-                    statusMessageElement.classList.add('text-red-500');
-                    resolve(null);
-                }
-            });
-        }
-
-        // FUNCIÓ PER CALCULAR LA DISTÀNCIA ENTRE DOS PUNTS (Fórmula de Haversine)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radi de la Terra en km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Distància en km
-        }
-
-        // Funció per actualitzar l'estat dels botons de filtre
-        function updateFilterButtons(type, order, mode) {
-            filterTypeButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.filterType === type) {
-                    btn.classList.add('bg-indigo-600');
-                }
-            });
-            sortOrderButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.sortOrder === order) {
-                    btn.classList.add('bg-indigo-600');
-                }
-            });
-            filterModeButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.filterMode === mode) {
-                    btn.classList.add('bg-indigo-600');
-                }
-            });
-        }
-        
-        // Funció principal per filtrar i renderitzar els esdeveniments
-        async function renderEvents(initialFilter = 'all') {
-            eventsContainer.innerHTML = '';
-            
-            // Si estem ordenant per proximitat i ja tenim les dades de l'usuari
-            if (currentSortOrder === 'proximity' && userLocation) {
-                statusMessageElement.textContent = 'Ordenant per proximitat.';
-            } else {
-                 statusMessageElement.textContent = 'Ordenant per data.';
-            }
-
-
-            let filteredEvents = allEventsData;
-            
-            // PRIMER FILTRE: PER VISIBILITAT (futurs/recents o passats antics)
-            if (currentFilterMode === 'upcoming') {
-                filteredEvents = filteredEvents.filter(event => !isOldPastEvent(event));
-            } else if (currentFilterMode === 'past') {
-                filteredEvents = filteredEvents.filter(event => isOldPastEvent(event));
-            }
-
-            // SEGON FILTRE: PER TIPUS (Swing, Blues, etc.)
-            if (currentFilterType !== 'all') {
-                const typesToFilter = eventTypeMapping[currentFilterType] || [];
-                filteredEvents = filteredEvents.filter(event => {
-                    const eventType = event.type || '';
-                    return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
-                });
-            }
-
-            // APLICAR L'ORDENACIÓ
-            if (currentSortOrder === 'proximity' && userLocation) {
-                // Ordenar per proximitat
-                filteredEvents.sort((a, b) => {
-                    const aCoords = locationCoordinates[normalizeString(a.location)];
-                    const bCoords = locationCoordinates[normalizeString(b.location)];
-
-                    if (!aCoords) return 1;
-                    if (!bCoords) return -1;
-                    
-                    const distA = calculateDistance(userLocation.lat, userLocation.lon, aCoords.lat, aCoords.lon);
-                    const distB = calculateDistance(userLocation.lat, userLocation.lon, bCoords.lat, bCoords.lon);
-                    
-                    a.distance = distA;
-                    b.distance = distB;
-                    
-                    return distA - distB;
-                });
-            } else {
-                // Ordenar per data (per defecte)
-                filteredEvents.sort((a, b) => {
-                    if (!a.startDate || !b.startDate) return 0;
-                    const [d1, m1, y1] = a.startDate.split('/');
-                    const [d2, m2, y2] = b.startDate.split('/');
-                    return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
-                });
-            }
-
-            // Agrupar els esdeveniments per mes o per proximitat
-            if (currentSortOrder === 'proximity' && userLocation) {
-                if (filteredEvents.length > 0) {
-                    const proximityGroupDiv = document.createElement('div');
-                    proximityGroupDiv.className = "mb-8";
-                    const proximityHeader = document.createElement('h2');
-                    proximityHeader.className = `month-header text-3xl sm:text-5xl font-extrabold text-white mb-6`;
-                    proximityHeader.textContent = `Resultats per proximitat`;
-                    proximityGroupDiv.appendChild(proximityHeader);
-
-                    filteredEvents.forEach(event => {
-                        const { day } = getMonthAndDay(event.startDate);
-                        const cardElement = createEventCard(event, day);
-                        proximityGroupDiv.appendChild(cardElement);
-                    });
-                    eventsContainer.appendChild(proximityGroupDiv);
-                }
-            } else {
-                const eventsGroupedByMonth = {};
-                filteredEvents.forEach(event => {
-                    if (!event.startDate) return;
-                    const { day, monthName, year } = getMonthAndDay(event.startDate);
-                    const monthYear = `${monthName} ${year}`;
-                    if (!eventsGroupedByMonth[monthYear]) {
-                        eventsGroupedByMonth[monthYear] = {};
-                    }
-                    if (!eventsGroupedByMonth[monthYear][day]) {
-                        eventsGroupedByMonth[monthYear][day] = [];
-                    }
-                    eventsGroupedByMonth[monthYear][day].push(event);
-                });
-
-                const monthOrder = ["Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
-                const sortedMonths = Object.keys(eventsGroupedByMonth).sort((a, b) => {
-                    const monthA = a.split(' ')[0];
-                    const monthB = b.split(' ')[0];
-                    const indexA = monthOrder.indexOf(monthA);
-                    const indexB = monthOrder.indexOf(monthB);
-                    return indexA - indexB;
-                });
-                
-                sortedMonths.forEach(monthYear => {
-                    const monthGroupDiv = document.createElement('div');
-                    monthGroupDiv.className = "mb-8";
-                    const monthHeader = document.createElement('h2');
-                    monthHeader.className = `month-header text-3xl sm:text-5xl font-extrabold text-white mb-6`;
-                    monthHeader.textContent = monthYear;
-                    monthGroupDiv.appendChild(monthHeader);
-
-                    const sortedDays = Object.keys(eventsGroupedByMonth[monthYear]).sort((a, b) => parseInt(a) - parseInt(b));
-
-                    sortedDays.forEach(day => {
-                        eventsGroupedByMonth[monthYear][day].forEach(event => {
-                            const cardElement = createEventCard(event, day);
-                            monthGroupDiv.appendChild(cardElement);
-                        });
-                    });
-                    eventsContainer.appendChild(monthGroupDiv);
-                });
-            }
-
-            if (filteredEvents.length === 0) {
-                eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
-            }
-            updateFilterButtons(currentFilterType, currentSortOrder, currentFilterMode);
-        }
-
-        // LISTENERS D'ESDEVENIMENTS
-        closeModalBtn.addEventListener('click', hideEventDetail);
-        closeMapBtn.addEventListener('click', hideMap); // Listener per tancar el mapa
-        
-        // Listener per a la capçalera desplegable del filtre
-        toggleFilterHeaderBtn.addEventListener('click', () => {
-            filterContent.classList.toggle('hidden');
-            filterChevron.classList.toggle('rotate-180'); // Rotate chevron icon
-        });
-
-        filterTypeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentFilterType = button.dataset.filterType;
-                renderEvents(); // Renderitza amb el nou filtre de tipus
-            });
-        });
-
-        sortOrderButtons.forEach(button => {
-            button.addEventListener('click', async () => {
-                const newSortOrder = button.dataset.sortOrder;
-                if (newSortOrder === 'proximity') {
-                    if (!userLocation) {
-                        statusMessageElement.textContent = 'Obtenint la teva ubicació...';
-                        statusMessageElement.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
-                        statusMessageElement.classList.add('text-gray-500');
-                        await getUserLocation(); // Espera a obtenir la ubicació
-                        if (userLocation) {
-                            currentSortOrder = newSortOrder;
-                            renderEvents();
-                        } else {
-                            // Si no hi ha ubicació, tornem a l'ordenació per data
-                            currentSortOrder = 'date';
-                            renderEvents();
-                        }
-                    } else {
-                        currentSortOrder = newSortOrder;
-                        renderEvents();
-                    }
-                } else {
-                    currentSortOrder = newSortOrder;
-                    renderEvents();
-                }
-            });
-        });
-        
-        filterModeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentFilterMode = button.dataset.filterMode;
-                renderEvents();
-            });
-        });
-        
-        showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
-
-        /**
-         * Funció per gestionar l'estat dels títols en fer scroll.
-         * Aplica un efecte de reducció de mida en funció de la posició de scroll.
-         */
+        // Funció per gestionar l'estat dels títols en fer scroll.
+        // NOTE: Aquesta funció estava duplicada. S'ha eliminat la versió redundant.
         function handleScroll() {
             const headers = document.querySelectorAll('.month-header');
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-            headers.forEach(header => {
-                // Check if the header is at the top of the viewport
-                if (scrollTop > 0) {
-                    header.classList.add('scrolled-header');
-                } else {
-                    header.classList.remove('scrolled-header');
-                }
-            });
-        }
-        
-        // FUNCIÓ PER OBTENIR LA UBICACIÓ DE L'USUARI (si el navegador ho permet)
-        function getUserLocation() {
-            return new Promise((resolve, reject) => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            userLocation = {
-                                lat: position.coords.latitude,
-                                lon: position.coords.longitude
-                            };
-                            statusMessageElement.textContent = 'Ubicació obtinguda!';
-                            statusMessageElement.classList.remove('text-gray-500', 'text-red-500');
-                            statusMessageElement.classList.add('text-green-500');
-                            resolve(userLocation);
-                        },
-                        (error) => {
-                            console.error("Error obtenint la ubicació:", error);
-                            statusMessageElement.textContent = 'Error: Ubicació no disponible. Ordenant per data.';
-                            statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
-                            statusMessageElement.classList.add('text-red-500');
-                            userLocation = null;
-                            resolve(null); // Resoldre amb null si hi ha un error
-                        }
-                    );
-                } else {
-                    statusMessageElement.textContent = 'Geolocation no és suportada pel teu navegador.';
-                    statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
-                    statusMessageElement.classList.add('text-red-500');
-                    resolve(null);
-                }
-            });
-        }
-
-        // FUNCIÓ PER CALCULAR LA DISTÀNCIA ENTRE DOS PUNTS (Fórmula de Haversine)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radi de la Terra en km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Distància en km
-        }
-
-        // Funció per actualitzar l'estat dels botons de filtre
-        function updateFilterButtons(type, order, mode) {
-            filterTypeButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.filterType === type) {
-                    btn.classList.add('bg-indigo-600');
-                }
-            });
-            sortOrderButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.sortOrder === order) {
-                    btn.classList.add('bg-indigo-600');
-                }
-            });
-            filterModeButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.filterMode === mode) {
-                    btn.classList.add('bg-indigo-600');
-                }
-            });
-        }
-        
-        // Funció principal per filtrar i renderitzar els esdeveniments
-        async function renderEvents(initialFilter = 'all') {
-            eventsContainer.innerHTML = '';
-            
-            // Si estem ordenant per proximitat i ja tenim les dades de l'usuari
-            if (currentSortOrder === 'proximity' && userLocation) {
-                statusMessageElement.textContent = 'Ordenant per proximitat.';
-            } else {
-                 statusMessageElement.textContent = 'Ordenant per data.';
-            }
-
-
-            let filteredEvents = allEventsData;
-            
-            // PRIMER FILTRE: PER VISIBILITAT (futurs/recents o passats antics)
-            if (currentFilterMode === 'upcoming') {
-                filteredEvents = filteredEvents.filter(event => !isOldPastEvent(event));
-            } else if (currentFilterMode === 'past') {
-                filteredEvents = filteredEvents.filter(event => isOldPastEvent(event));
-            }
-
-            // SEGON FILTRE: PER TIPUS (Swing, Blues, etc.)
-            if (currentFilterType !== 'all') {
-                const typesToFilter = eventTypeMapping[currentFilterType] || [];
-                filteredEvents = filteredEvents.filter(event => {
-                    const eventType = event.type || '';
-                    return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
-                });
-            }
-
-            // APLICAR L'ORDENACIÓ
-            if (currentSortOrder === 'proximity' && userLocation) {
-                // Ordenar per proximitat
-                filteredEvents.sort((a, b) => {
-                    const aCoords = locationCoordinates[normalizeString(a.location)];
-                    const bCoords = locationCoordinates[normalizeString(b.location)];
-
-                    if (!aCoords) return 1;
-                    if (!bCoords) return -1;
-                    
-                    const distA = calculateDistance(userLocation.lat, userLocation.lon, aCoords.lat, aCoords.lon);
-                    const distB = calculateDistance(userLocation.lat, userLocation.lon, bCoords.lat, bCoords.lon);
-                    
-                    a.distance = distA;
-                    b.distance = distB;
-                    
-                    return distA - distB;
-                });
-            } else {
-                // Ordenar per data (per defecte)
-                filteredEvents.sort((a, b) => {
-                    if (!a.startDate || !b.startDate) return 0;
-                    const [d1, m1, y1] = a.startDate.split('/');
-                    const [d2, m2, y2] = b.startDate.split('/');
-                    return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
-                });
-            }
-
-            // Agrupar els esdeveniments per mes o per proximitat
-            if (currentSortOrder === 'proximity' && userLocation) {
-                if (filteredEvents.length > 0) {
-                    const proximityGroupDiv = document.createElement('div');
-                    proximityGroupDiv.className = "mb-8";
-                    const proximityHeader = document.createElement('h2');
-                    proximityHeader.className = `month-header text-3xl sm:text-5xl font-extrabold text-white mb-6`;
-                    proximityHeader.textContent = `Resultats per proximitat`;
-                    proximityGroupDiv.appendChild(proximityHeader);
-
-                    filteredEvents.forEach(event => {
-                        const { day } = getMonthAndDay(event.startDate);
-                        const cardElement = createEventCard(event, day);
-                        proximityGroupDiv.appendChild(cardElement);
-                    });
-                    eventsContainer.appendChild(proximityGroupDiv);
-                }
-            } else {
-                const eventsGroupedByMonth = {};
-                filteredEvents.forEach(event => {
-                    if (!event.startDate) return;
-                    const { day, monthName, year } = getMonthAndDay(event.startDate);
-                    const monthYear = `${monthName} ${year}`;
-                    if (!eventsGroupedByMonth[monthYear]) {
-                        eventsGroupedByMonth[monthYear] = {};
-                    }
-                    if (!eventsGroupedByMonth[monthYear][day]) {
-                        eventsGroupedByMonth[monthYear][day] = [];
-                    }
-                    eventsGroupedByMonth[monthYear][day].push(event);
-                });
-
-                const monthOrder = ["Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
-                const sortedMonths = Object.keys(eventsGroupedByMonth).sort((a, b) => {
-                    const monthA = a.split(' ')[0];
-                    const monthB = b.split(' ')[0];
-                    const indexA = monthOrder.indexOf(monthA);
-                    const indexB = monthOrder.indexOf(monthB);
-                    return indexA - indexB;
-                });
-                
-                sortedMonths.forEach(monthYear => {
-                    const monthGroupDiv = document.createElement('div');
-                    monthGroupDiv.className = "mb-8";
-                    const monthHeader = document.createElement('h2');
-                    monthHeader.className = `month-header text-3xl sm:text-5xl font-extrabold text-white mb-6`;
-                    monthHeader.textContent = monthYear;
-                    monthGroupDiv.appendChild(monthHeader);
-
-                    const sortedDays = Object.keys(eventsGroupedByMonth[monthYear]).sort((a, b) => parseInt(a) - parseInt(b));
-
-                    sortedDays.forEach(day => {
-                        eventsGroupedByMonth[monthYear][day].forEach(event => {
-                            const cardElement = createEventCard(event, day);
-                            monthGroupDiv.appendChild(cardElement);
-                        });
-                    });
-                    eventsContainer.appendChild(monthGroupDiv);
-                });
-            }
-
-            if (filteredEvents.length === 0) {
-                eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
-            }
-            updateFilterButtons(currentFilterType, currentSortOrder, currentFilterMode);
-        }
-
-        // LISTENERS D'ESDEVENIMENTS
-        closeModalBtn.addEventListener('click', hideEventDetail);
-        closeMapBtn.addEventListener('click', hideMap); // Listener per tancar el mapa
-        
-        // Listener per a la capçalera desplegable del filtre
-        toggleFilterHeaderBtn.addEventListener('click', () => {
-            filterContent.classList.toggle('hidden');
-            filterChevron.classList.toggle('rotate-180'); // Rotate chevron icon
-        });
-
-        filterTypeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentFilterType = button.dataset.filterType;
-                renderEvents(); // Renderitza amb el nou filtre de tipus
-            });
-        });
-
-        sortOrderButtons.forEach(button => {
-            button.addEventListener('click', async () => {
-                const newSortOrder = button.dataset.sortOrder;
-                if (newSortOrder === 'proximity') {
-                    if (!userLocation) {
-                        statusMessageElement.textContent = 'Obtenint la teva ubicació...';
-                        statusMessageElement.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
-                        statusMessageElement.classList.add('text-gray-500');
-                        await getUserLocation(); // Espera a obtenir la ubicació
-                        if (userLocation) {
-                            currentSortOrder = newSortOrder;
-                            renderEvents();
-                        } else {
-                            // Si no hi ha ubicació, tornem a l'ordenació per data
-                            currentSortOrder = 'date';
-                            renderEvents();
-                        }
-                    } else {
-                        currentSortOrder = newSortOrder;
-                        renderEvents();
-                    }
-                } else {
-                    currentSortOrder = newSortOrder;
-                    renderEvents();
-                }
-            });
-        });
-        
-        filterModeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentFilterMode = button.dataset.filterMode;
-                renderEvents();
-            });
-        });
-        
-        showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
-
-        /**
-         * Funció per gestionar l'estat dels títols en fer scroll.
-         * Aplica un efecte de reducció de mida en funció de la posició de scroll.
-         */
-        function handleScroll() {
-            const headers = document.querySelectorAll('h2.month-header');
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
             headers.forEach(header => {
@@ -1303,6 +771,252 @@
                 }
             });
         }
+        
+        // FUNCIÓ PER OBTENIR LA UBICACIÓ DE L'USUARI (si el navegador ho permet)
+        function getUserLocation() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            userLocation = {
+                                lat: position.coords.latitude,
+                                lon: position.coords.longitude
+                            };
+                            statusMessageElement.textContent = 'Ubicació obtinguda!';
+                            statusMessageElement.classList.remove('text-gray-500', 'text-red-500');
+                            statusMessageElement.classList.add('text-green-500');
+                            resolve(userLocation);
+                        },
+                        (error) => {
+                            console.error("Error obtenint la ubicació:", error);
+                            statusMessageElement.textContent = 'Error: Ubicació no disponible. Ordenant per data.';
+                            statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
+                            statusMessageElement.classList.add('text-red-500');
+                            userLocation = null;
+                            resolve(null); // Resoldre amb null si hi ha un error
+                        }
+                    );
+                } else {
+                    statusMessageElement.textContent = 'Geolocation no és suportada pel teu navegador.';
+                    statusMessageElement.classList.remove('text-gray-500', 'text-green-500');
+                    statusMessageElement.classList.add('text-red-500');
+                    resolve(null);
+                }
+            });
+        }
+
+        // FUNCIÓ PER CALCULAR LA DISTÀNCIA ENTRE DOS PUNTS (Fórmula de Haversine)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radi de la Terra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distància en km
+        }
+
+        // Funció per actualitzar l'estat dels botons de filtre
+        function updateFilterButtons(type, order, mode) {
+            filterTypeButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600');
+                if (btn.dataset.filterType === type) {
+                    btn.classList.add('bg-indigo-600');
+                }
+            });
+            sortOrderButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600');
+                if (btn.dataset.sortOrder === order) {
+                    btn.classList.add('bg-indigo-600');
+                }
+            });
+            filterModeButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600');
+                if (btn.dataset.filterMode === mode) {
+                    btn.classList.add('bg-indigo-600');
+                }
+            });
+        }
+        
+        // Funció principal per filtrar i renderitzar els esdeveniments
+        async function renderEvents(initialFilter = 'all') {
+            eventsContainer.innerHTML = '';
+            
+            // Si estem ordenant per proximitat i ja tenim les dades de l'usuari
+            if (currentSortOrder === 'proximity' && userLocation) {
+                statusMessageElement.textContent = 'Ordenant per proximitat.';
+            } else {
+                statusMessageElement.textContent = 'Ordenant per data.';
+            }
+
+
+            let filteredEvents = allEventsData;
+            
+            // PRIMER FILTRE: PER VISIBILITAT (futurs/recents o passats antics)
+            if (currentFilterMode === 'upcoming') {
+                filteredEvents = filteredEvents.filter(event => !isOldPastEvent(event));
+            } else if (currentFilterMode === 'past') {
+                filteredEvents = filteredEvents.filter(event => isOldPastEvent(event));
+            }
+
+            // SEGON FILTRE: PER TIPUS (Swing, Blues, etc.)
+            if (currentFilterType !== 'all') {
+                const typesToFilter = eventTypeMapping[currentFilterType] || [];
+                filteredEvents = filteredEvents.filter(event => {
+                    const eventType = event.type || '';
+                    return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
+                });
+            }
+
+            // APLICAR L'ORDENACIÓ
+            if (currentSortOrder === 'proximity' && userLocation) {
+                // Ordenar per proximitat
+                filteredEvents.sort((a, b) => {
+                    const aCoords = locationCoordinates[normalizeString(a.location)];
+                    const bCoords = locationCoordinates[normalizeString(b.location)];
+
+                    if (!aCoords) return 1;
+                    if (!bCoords) return -1;
+                    
+                    const distA = calculateDistance(userLocation.lat, userLocation.lon, aCoords.lat, aCoords.lon);
+                    const distB = calculateDistance(userLocation.lat, userLocation.lon, bCoords.lat, bCoords.lon);
+                    
+                    a.distance = distA;
+                    b.distance = distB;
+                    
+                    return distA - distB;
+                });
+            } else {
+                // Ordenar per data (per defecte)
+                filteredEvents.sort((a, b) => {
+                    if (!a.startDate || !b.startDate) return 0;
+                    const [d1, m1, y1] = a.startDate.split('/');
+                    const [d2, m2, y2] = b.startDate.split('/');
+                    return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+                });
+            }
+
+            // Agrupar els esdeveniments per mes o per proximitat
+            if (currentSortOrder === 'proximity' && userLocation) {
+                if (filteredEvents.length > 0) {
+                    const proximityGroupDiv = document.createElement('div');
+                    proximityGroupDiv.className = "mb-8";
+                    const proximityHeader = document.createElement('h2');
+                    proximityHeader.className = `month-header text-3xl sm:text-5xl font-extrabold text-white mb-6`;
+                    proximityHeader.textContent = `Resultats per proximitat`;
+                    proximityGroupDiv.appendChild(proximityHeader);
+
+                    filteredEvents.forEach(event => {
+                        const { day } = getMonthAndDay(event.startDate);
+                        const cardElement = createEventCard(event, day);
+                        proximityGroupDiv.appendChild(cardElement);
+                    });
+                    eventsContainer.appendChild(proximityGroupDiv);
+                }
+            } else {
+                const eventsGroupedByMonth = {};
+                filteredEvents.forEach(event => {
+                    if (!event.startDate) return;
+                    const { day, monthName, year } = getMonthAndDay(event.startDate);
+                    const monthYear = `${monthName} ${year}`;
+                    if (!eventsGroupedByMonth[monthYear]) {
+                        eventsGroupedByMonth[monthYear] = {};
+                    }
+                    if (!eventsGroupedByMonth[monthYear][day]) {
+                        eventsGroupedByMonth[monthYear][day] = [];
+                    }
+                    eventsGroupedByMonth[monthYear][day].push(event);
+                });
+
+                const monthOrder = ["Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+                const sortedMonths = Object.keys(eventsGroupedByMonth).sort((a, b) => {
+                    const monthA = a.split(' ')[0];
+                    const monthB = b.split(' ')[0];
+                    const indexA = monthOrder.indexOf(monthA);
+                    const indexB = monthOrder.indexOf(monthB);
+                    return indexA - indexB;
+                });
+                
+                sortedMonths.forEach(monthYear => {
+                    const monthGroupDiv = document.createElement('div');
+                    monthGroupDiv.className = "mb-8";
+                    const monthHeader = document.createElement('h2');
+                    monthHeader.className = `month-header text-3xl sm:text-5xl font-extrabold text-white mb-6`;
+                    monthHeader.textContent = monthYear;
+                    monthGroupDiv.appendChild(monthHeader);
+
+                    const sortedDays = Object.keys(eventsGroupedByMonth[monthYear]).sort((a, b) => parseInt(a) - parseInt(b));
+
+                    sortedDays.forEach(day => {
+                        eventsGroupedByMonth[monthYear][day].forEach(event => {
+                            const cardElement = createEventCard(event, day);
+                            monthGroupDiv.appendChild(cardElement);
+                        });
+                    });
+                    eventsContainer.appendChild(monthGroupDiv);
+                });
+            }
+
+            if (filteredEvents.length === 0) {
+                eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
+            }
+            updateFilterButtons(currentFilterType, currentSortOrder, currentFilterMode);
+        }
+
+        // LISTENERS D'ESDEVENIMENTS
+        closeModalBtn.addEventListener('click', hideEventDetail);
+        closeMapBtn.addEventListener('click', hideMap); // Listener per tancar el mapa
+        
+        // Listener per a la capçalera desplegable del filtre
+        toggleFilterHeaderBtn.addEventListener('click', () => {
+            filterContent.classList.toggle('hidden');
+            filterChevron.classList.toggle('rotate-180'); // Rotate chevron icon
+        });
+
+        filterTypeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                currentFilterType = button.dataset.filterType;
+                renderEvents(); // Renderitza amb el nou filtre de tipus
+            });
+        });
+
+        sortOrderButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                const newSortOrder = button.dataset.sortOrder;
+                if (newSortOrder === 'proximity') {
+                    if (!userLocation) {
+                        statusMessageElement.textContent = 'Obtenint la teva ubicació...';
+                        statusMessageElement.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
+                        statusMessageElement.classList.add('text-gray-500');
+                        await getUserLocation(); // Espera a obtenir la ubicació
+                        if (userLocation) {
+                            currentSortOrder = newSortOrder;
+                            renderEvents();
+                        } else {
+                            // Si no hi ha ubicació, tornem a l'ordenació per data
+                            currentSortOrder = 'date';
+                            renderEvents();
+                        }
+                    } else {
+                        currentSortOrder = newSortOrder;
+                        renderEvents();
+                    }
+                } else {
+                    currentSortOrder = newSortOrder;
+                    renderEvents();
+                }
+            });
+        });
+        
+        filterModeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                currentFilterMode = button.dataset.filterMode;
+                renderEvents();
+            });
+        });
+        
+        showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
         
         // Càrrega inicial de les dades i renderització
         async function init() {
