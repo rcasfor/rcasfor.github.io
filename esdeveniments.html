@@ -479,7 +479,7 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+            const sevenDaysInMs = 2 * 24 * 60 * 60 * 1000;
             
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
