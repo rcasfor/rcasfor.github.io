@@ -466,8 +466,6 @@
 
         /**
          * Checks if an event is in the old past (more than 7 days ago).
-         * NOTE: The original code checked for 3 days, but the comment said 7.
-         * I've updated the logic to match the 7-day comment.
          * @param {Object} event - The event object.
          * @returns {boolean} True if the event ended more than 7 days ago, false otherwise.
          */
@@ -479,7 +477,7 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 2 * 24 * 60 * 60 * 1000;
+            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
             
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
