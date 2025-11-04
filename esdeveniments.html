@@ -120,6 +120,17 @@
                 </div>
 
                 <div>
+                    <p class="text-gray-400 mb-2">Província</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="filter-province-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-province="all">Totes</button>
+                        <button class="filter-province-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-province="Barcelona">Barcelona</button>
+                        <button class="filter-province-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-province="Tarragona">Tarragona</button>
+                        <button class="filter-province-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-province="Lleida">Lleida</button>
+                        <button class="filter-province-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-filter-province="Girona">Girona</button>
+                    </div>
+                </div>
+
+                <div>
                     <p class="text-gray-400 mb-2">Ordenar per</p>
                     <div class="flex gap-2">
                         <button class="sort-order-btn bg-gray-700 hover:bg-indigo-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200" data-sort-order="date">Data</button>
@@ -206,6 +217,7 @@
         let userLocation = null;
         let currentFilterType = 'all';
         let currentSortOrder = 'date';
+        let currentFilterProvince = 'all';
         let currentFilterMode = 'upcoming'; // 'upcoming' o 'past'
         let myMap = null;
 
@@ -235,6 +247,7 @@
         const filterTypeButtons = document.querySelectorAll('.filter-type-btn');
         const sortOrderButtons = document.querySelectorAll('.sort-order-btn');
         const filterModeButtons = document.querySelectorAll('.filter-mode-btn');
+        const filterProvinceButtons = document.querySelectorAll('.filter-province-btn');
         const statusMessageElement = document.getElementById('status-message');
         const showMapBtn = document.getElementById('show-map-btn');
         const mapModal = document.getElementById('map-modal');
@@ -393,6 +406,21 @@
                 console.error('Error en la geocodificació:', error);
                 return null;
             }
+        }
+
+        /**
+         * Funció per obtenir la província d'una ubicació a partir de les seves coordenades.
+         * @param {string} location - La ubicació de l'esdeveniment.
+         * @returns {Promise<string|null>} El nom de la província o null.
+         */
+        async function getProvinceFromLocation(location) {
+            const coords = locationCoordinates[location];
+            if (!coords) return null;
+            const { lat, lon } = coords;
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageApiKey}&language=ca`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.results[0]?.components.state_district || data.results[0]?.components.province || null;
         }
 
         // Helper per obtenir el mes i el dia per a la capçalera i la targeta
@@ -816,7 +844,7 @@
         }
 
         // Funció per actualitzar l'estat dels botons de filtre
-        function updateFilterButtons(type, order, mode) {
+        function updateFilterButtons(type, order, mode, province) {
             filterTypeButtons.forEach(btn => {
                 btn.classList.remove('bg-indigo-600');
                 if (btn.dataset.filterType === type) {
@@ -832,6 +860,12 @@
             filterModeButtons.forEach(btn => {
                 btn.classList.remove('bg-indigo-600');
                 if (btn.dataset.filterMode === mode) {
+                    btn.classList.add('bg-indigo-600');
+                }
+            });
+            filterProvinceButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600');
+                if (btn.dataset.filterProvince === province) {
                     btn.classList.add('bg-indigo-600');
                 }
             });
@@ -864,6 +898,14 @@
                 filteredEvents = filteredEvents.filter(event => {
                     const eventType = event.type || '';
                     return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
+                });
+            }
+
+            // TERCER FILTRE: PER PROVÍNCIA
+            if (currentFilterProvince !== 'all') {
+                filteredEvents = filteredEvents.filter(event => {
+                    const province = event.province || '';
+                    return province.toLowerCase().includes(currentFilterProvince.toLowerCase());
                 });
             }
 
@@ -959,7 +1001,7 @@
             if (filteredEvents.length === 0) {
                 eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
             }
-            updateFilterButtons(currentFilterType, currentSortOrder, currentFilterMode);
+            updateFilterButtons(currentFilterType, currentSortOrder, currentFilterMode, currentFilterProvince);
         }
 
         // LISTENERS D'ESDEVENIMENTS
@@ -1013,6 +1055,13 @@
                 renderEvents();
             });
         });
+
+        filterProvinceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                currentFilterProvince = button.dataset.filterProvince;
+                renderEvents();
+            });
+        });
         
         showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
         
@@ -1032,6 +1081,13 @@
                 }
             });
             await Promise.all(geocodePromises);
+
+            // Obtenir la província per a cada esdeveniment
+            const provincePromises = allEventsData.map(async (event) => {
+                const province = await getProvinceFromLocation(event.location);
+                event.province = province;
+            });
+            await Promise.all(provincePromises);
 
             statusMessageElement.textContent = 'Geocodificació completa. Llest per a l\'acció.';
 
