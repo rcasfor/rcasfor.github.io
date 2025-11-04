@@ -215,9 +215,9 @@
         
         let allEventsData = [];
         let userLocation = null;
-        let currentFilterType = 'all';
+        let selectedFilterTypes = ['all']; // Canviat a array per selecció múltiple
+        let selectedFilterProvinces = ['all']; // Canviat a array per selecció múltiple
         let currentSortOrder = 'date';
-        let currentFilterProvince = 'all';
         let currentFilterMode = 'upcoming'; // 'upcoming' o 'past'
         let myMap = null;
 
@@ -844,28 +844,32 @@
         }
 
         // Funció per actualitzar l'estat dels botons de filtre
-        function updateFilterButtons(type, order, mode, province) {
+        function updateFilterButtons(types, order, mode, provinces) {
             filterTypeButtons.forEach(btn => {
                 btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.filterType === type) {
+                if (types.includes(btn.dataset.filterType)) {
                     btn.classList.add('bg-indigo-600');
                 }
             });
+
             sortOrderButtons.forEach(btn => {
                 btn.classList.remove('bg-indigo-600');
                 if (btn.dataset.sortOrder === order) {
                     btn.classList.add('bg-indigo-600');
                 }
             });
+
             filterModeButtons.forEach(btn => {
                 btn.classList.remove('bg-indigo-600');
                 if (btn.dataset.filterMode === mode) {
                     btn.classList.add('bg-indigo-600');
                 }
             });
+
             filterProvinceButtons.forEach(btn => {
                 btn.classList.remove('bg-indigo-600');
-                if (btn.dataset.filterProvince === province) {
+                // Assegura que 'provinces' és un array abans d'usar 'includes'
+                if (Array.isArray(provinces) && provinces.includes(btn.dataset.filterProvince)) {
                     btn.classList.add('bg-indigo-600');
                 }
             });
@@ -893,19 +897,22 @@
             }
 
             // SEGON FILTRE: PER TIPUS (Swing, Blues, etc.)
-            if (currentFilterType !== 'all') {
-                const typesToFilter = eventTypeMapping[currentFilterType] || [];
+            if (!selectedFilterTypes.includes('all')) {
+                const typesToFilter = selectedFilterTypes.flatMap(type => eventTypeMapping[type] || []);
                 filteredEvents = filteredEvents.filter(event => {
                     const eventType = event.type || '';
-                    return typesToFilter.some(type => eventType.toLowerCase().includes(type.toLowerCase()));
+                    // Comprova si el tipus de l'esdeveniment conté alguna de les paraules clau dels filtres seleccionats
+                    return typesToFilter.some(filterKeyword => eventType.toLowerCase().includes(filterKeyword.toLowerCase()));
                 });
             }
 
-            // TERCER FILTRE: PER PROVÍNCIA
-            if (currentFilterProvince !== 'all') {
+            // TERCER FILTRE: PER PROVÍNCIA - ara amb selecció múltiple
+            if (!selectedFilterProvinces.includes('all')) {
                 filteredEvents = filteredEvents.filter(event => {
                     const province = event.province || '';
-                    return province.toLowerCase().includes(currentFilterProvince.toLowerCase());
+                    if (!province) return false;
+                    // Comprova si la província de l'esdeveniment coincideix amb alguna de les províncies seleccionades
+                    return selectedFilterProvinces.some(selectedProvince => province.toLowerCase().includes(selectedProvince.toLowerCase()));
                 });
             }
 
@@ -1001,7 +1008,7 @@
             if (filteredEvents.length === 0) {
                 eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
             }
-            updateFilterButtons(currentFilterType, currentSortOrder, currentFilterMode, currentFilterProvince);
+            updateFilterButtons(selectedFilterTypes, currentSortOrder, currentFilterMode, selectedFilterProvinces);
         }
 
         // LISTENERS D'ESDEVENIMENTS
@@ -1014,10 +1021,41 @@
             filterChevron.classList.toggle('rotate-180'); // Rotate chevron icon
         });
 
+        // Funció genèrica per gestionar la selecció múltiple en un grup de botons de filtre
+        function handleMultiSelect(button, selectedArray) {
+            const filterValue = button.dataset.filterType || button.dataset.filterProvince;
+            const isAllButton = filterValue === 'all';
+
+            if (isAllButton) {
+                // Si es fa clic a "Tots", neteja la selecció i selecciona només "Tots"
+                selectedArray.length = 0;
+                selectedArray.push('all');
+            } else {
+                // Si es fa clic a un altre botó
+                const index = selectedArray.indexOf(filterValue);
+                if (index > -1) {
+                    // Si ja estava seleccionat, el deselecciona
+                    selectedArray.splice(index, 1);
+                } else {
+                    // Si no estava seleccionat, l'afegeix
+                    selectedArray.push(filterValue);
+                }
+                // Treu "Tots" si hi ha alguna altra selecció
+                const allIndex = selectedArray.indexOf('all');
+                if (allIndex > -1 && selectedArray.length > 1) {
+                    selectedArray.splice(allIndex, 1);
+                }
+                // Si no queda cap selecció, torna a seleccionar "Tots"
+                if (selectedArray.length === 0) {
+                    selectedArray.push('all');
+                }
+            }
+            renderEvents();
+        }
+
         filterTypeButtons.forEach(button => {
             button.addEventListener('click', () => {
-                currentFilterType = button.dataset.filterType;
-                renderEvents(); // Renderitza amb el nou filtre de tipus
+                handleMultiSelect(button, selectedFilterTypes);
             });
         });
 
@@ -1058,8 +1096,7 @@
 
         filterProvinceButtons.forEach(button => {
             button.addEventListener('click', () => {
-                currentFilterProvince = button.dataset.filterProvince;
-                renderEvents();
+                handleMultiSelect(button, selectedFilterProvinces);
             });
         });
         
