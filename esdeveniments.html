@@ -141,6 +141,9 @@
                 <button id="show-map-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900">
                     Veure Mapa
                 </button>
+                <button id="reset-filters-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transform transition duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900 mt-2">
+                    Restablir Filtres
+                </button>
                 <p id="status-message" class="text-xs text-gray-500"></p>
             </div>
         </div>
@@ -250,6 +253,7 @@
         const filterProvinceButtons = document.querySelectorAll('.filter-province-btn');
         const statusMessageElement = document.getElementById('status-message');
         const showMapBtn = document.getElementById('show-map-btn');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
         const mapModal = document.getElementById('map-modal');
         const closeMapBtn = document.getElementById('close-map-btn');
 
@@ -1008,7 +1012,7 @@
             if (filteredEvents.length === 0) {
                 eventsContainer.innerHTML = '<p class="text-center text-xl text-gray-400">No s\'han trobat esdeveniments.</p>';
             }
-            updateFilterButtons(selectedFilterTypes, currentSortOrder, currentFilterMode, selectedFilterProvinces);
+            updateAndSaveFilters(); // Guarda els filtres (la província només si s'ha seleccionat manualment)
         }
 
         // LISTENERS D'ESDEVENIMENTS
@@ -1017,12 +1021,12 @@
         
         // Listener per a la capçalera desplegable del filtre
         toggleFilterHeaderBtn.addEventListener('click', () => {
-            filterContent.classList.toggle('hidden');
-            filterChevron.classList.toggle('rotate-180'); // Rotate chevron icon
+            filterContent.classList.toggle('hidden'); // Mostra o amaga el contingut del filtre
+            filterChevron.classList.toggle('rotate-180'); // Rota la icona de la fletxa
         });
 
         // Funció genèrica per gestionar la selecció múltiple en un grup de botons de filtre
-        function handleMultiSelect(button, selectedArray) {
+        function handleMultiSelect(button, selectedArray, shouldSaveProvince = false) {
             const filterValue = button.dataset.filterType || button.dataset.filterProvince;
             const isAllButton = filterValue === 'all';
 
@@ -1050,7 +1054,12 @@
                     selectedArray.push('all');
                 }
             }
-            renderEvents();
+            
+            // Si estem canviant la província manualment, ho indiquem per desar-la.
+            if (shouldSaveProvince) {
+                localStorage.setItem('manualProvinceSelection', 'true');
+            }
+            renderEvents(); // Renderitza amb els nous filtres
         }
 
         filterTypeButtons.forEach(button => {
@@ -1096,18 +1105,27 @@
 
         filterProvinceButtons.forEach(button => {
             button.addEventListener('click', () => {
-                handleMultiSelect(button, selectedFilterProvinces);
+                handleMultiSelect(button, selectedFilterProvinces, true); // Indiquem que volem guardar la província
             });
         });
         
         showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
         
+        // --- Funcions per guardar i carregar filtres ---
+        function saveFiltersToLocalStorage(saveProvinces = false) {
+            const filters = {
+                types: selectedFilterTypes,
+                provinces: saveProvinces ? selectedFilterProvinces : undefined,
+                sortOrder: currentSortOrder,
+                mode: currentFilterMode
+            };
+            localStorage.setItem('eventFilters', JSON.stringify(filters));
+        }
+
         // Càrrega inicial de les dades i renderització
         async function init() {
-            // --- PAS 1: Iniciar la detecció de la ubicació de l'usuari i el filtre de província en segon pla ---
-            // Movem la definició de les funcions fora de init per a més claredat
-            const userProvinceFilterPromise = setUserProvinceFilter();
-
+            // --- PAS 1: Carregar filtres guardats i iniciar detecció d'ubicació ---
+            const userProvinceFilterPromise = loadFiltersAndSetProvince(); // Aquesta funció ara gestiona tot
             // --- PAS 2: Carregar i processar les dades dels esdeveniments ---
             loadingMessage.classList.remove('hidden');
             statusMessageElement.textContent = 'Carregant dades...';
@@ -1153,15 +1171,33 @@
 
         // --- Funcions de geolocalització i filtre de província (mogudes fora d'init) ---
 
-        async function setUserProvinceFilter() {
+        async function loadFiltersAndSetProvince() { // Aquesta funció ara sempre estableix la província per ubicació
+            const savedFilters = localStorage.getItem('eventFilters');
+            if (savedFilters) {
+                const { types, sortOrder, mode } = JSON.parse(savedFilters);
+                selectedFilterTypes = types || ['all'];
+                currentSortOrder = sortOrder || 'date';
+                currentFilterMode = mode || 'upcoming';
+                console.log('Filtres carregats des de localStorage:', { types, sortOrder, mode });
+                // Si l'ordenació per proximitat estava guardada, necessitem la ubicació
+                if (currentSortOrder === 'proximity') {
+                    await getUserLocation();
+                }
+            }
+
+            // Sempre intentem establir la província per ubicació, independentment dels altres filtres guardats.
             const cachedProvince = getCachedUserProvince();
             if (cachedProvince) {
                 selectedFilterProvinces = [cachedProvince];
                 console.log(`S'ha carregat la província des de la memòria cau: ${cachedProvince}`);
                 await getUserLocation(); // Obtenim la ubicació igualment per a l'ordenació per proximitat
-                return;
+            } else {
+                // Si no hi ha província a la memòria cau, procedim amb la geolocalització completa.
+                await setUserProvinceFilter();
             }
+        }
 
+        async function setUserProvinceFilter() { // Funció per detectar i establir la província
             // Si no hi ha dades a la memòria cau, obtenim la ubicació i la geocodifiquem
             await getUserLocation(); // Aquesta funció ja gestiona els errors de geolocalització
             if (!userLocation) {
@@ -1216,8 +1252,30 @@
             return province;
         }
         
+        // Funció combinada per actualitzar botons i guardar l'estat (excepte la província)
+        function updateAndSaveFilters() {
+            // Comprovem si la província va ser seleccionada manualment per decidir si la guardem
+            const shouldSaveProvince = localStorage.getItem('manualProvinceSelection') === 'true';
+            updateFilterButtons(selectedFilterTypes, currentSortOrder, currentFilterMode, selectedFilterProvinces);
+            saveFiltersToLocalStorage(shouldSaveProvince);
+            if (shouldSaveProvince) {
+                localStorage.removeItem('manualProvinceSelection'); // Netegem l'indicador
+            }
+        }
+
+        // Funció per restablir tots els filtres
+        function resetAllFilters() {
+            localStorage.removeItem('eventFilters');
+            localStorage.removeItem('userProvince');
+            localStorage.removeItem('userLocationCoords');
+            selectedFilterTypes = ['all'];
+            selectedFilterProvinces = ['all'];
+            window.location.reload(); // Recarreguem la pàgina per aplicar els canvis des de zero
+        }
+        
         document.addEventListener('DOMContentLoaded', init);
         window.addEventListener('scroll', handleScroll);
+        resetFiltersBtn.addEventListener('click', resetAllFilters);
     </script>
 </body>
 </html>
