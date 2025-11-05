@@ -389,21 +389,34 @@
          * @returns {Promise<Object|null>} Un objecte amb latitud i longitud o null si no es troba.
          */
         async function geocodeAddress(address) {
+            // Si ja tenim la coordenada (fins i tot si és null), no la tornem a demanar.
+            if (locationCoordinates.hasOwnProperty(address)) {
+                return locationCoordinates[address];
+            }
+
             if (!openCageApiKey || !address) {
                 console.warn('API Key or address missing for geocoding.');
                 return null;
             }
             const encodedAddress = encodeURIComponent(address);
             const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodedAddress}&key=${openCageApiKey}&language=ca&pretty=1`;
-            
+
             try {
                 const response = await fetch(url);
                 const data = await response.json();
+
+                // Comprovació millorada de la resposta de l'API
+                if (data.status && data.status.code === 402) {
+                    console.error(`Error de quota de l'API (OpenCage): ${data.status.message}. Has superat el límit diari del pla gratuït.`);
+                    return null; // Aturem les peticions si hem superat la quota
+                }
+
                 if (data.results && data.results.length > 0) {
                     const { lat, lng } = data.results[0].geometry;
                     return { lat, lon: lng };
                 } else {
-                    console.warn(`No s'han trobat coordenades per a l'adreça: ${address}`);
+                    // Log més detallat per entendre per què no hi ha resultats
+                    console.warn(`No s'han trobat coordenades per a l'adreça: "${address}". Resposta de l'API:`, data);
                     return null;
                 }
             } catch (error) {
