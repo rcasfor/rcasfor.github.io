@@ -1122,6 +1122,7 @@
             // Obtenir la província per a cada esdeveniment
             const provincePromises = allEventsData.map(async (event) => {
                 const province = await getProvinceFromLocation(event.location);
+
                 event.province = province;
             });
             await Promise.all(provincePromises);
@@ -1130,6 +1131,37 @@
 
             loadingMessage.classList.add('hidden');
             // Intentar obtenir la ubicació de l'usuari a l'inici
+            
+            // Obtenir la ubicació de l'usuari i filtrar per província
+            async function setUserProvinceFilter() {
+                await getUserLocation();
+                if (userLocation) {
+                    // Obtenir la província a partir de les coordenades de l'usuari
+                    const province = await getProvinceFromCoordinates(userLocation.lat, userLocation.lon);
+                    if (province) {
+                        // Establir la província com a filtre per defecte
+                        selectedFilterProvinces = [province];
+                        console.log(`S'ha establert el filtre de província per defecte a: ${province}`);
+                    } else {
+                        console.warn('No s\'ha pogut determinar la província de l\'usuari, mostrant totes les províncies.');
+                        selectedFilterProvinces = ['all'];
+                    }
+                } else {
+                    console.warn('No s\'ha pogut obtenir la ubicació de l\'usuari, mostrant totes les províncies.');
+                    selectedFilterProvinces = ['all'];
+                }
+            }
+
+            // Funció per obtenir la província a partir de les coordenades
+            async function getProvinceFromCoordinates(latitude, longitude) {
+                const url = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${openCageApiKey}&language=ca`;
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.results[0]?.components.state_district || data.results[0]?.components.province || null;
+            }
+
+            await setUserProvinceFilter();
+
             await getUserLocation();
             renderEvents();
 
