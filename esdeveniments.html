@@ -522,7 +522,7 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 2 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
+            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
             
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
@@ -718,7 +718,7 @@
                 
                 // Afegeix una capa base d'OpenStreetMap
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 }).addTo(myMap);
                 console.log('Map successfully created and tile layer added.');
             } catch (error) {
