@@ -410,8 +410,7 @@
                     return null;
                 }
             } catch (error) {
-                console.error('Error en la geocodificació:', error.message);
-                logStatus(`Error en la geocodificació per a l'adreça "${address}": ${error.message}`, 'error');
+                console.error('Error en la geocodificació:', error);
                 return null;
             }
         }
@@ -424,14 +423,11 @@
         async function getProvinceFromLocation(location) {
             const coords = locationCoordinates[location];
             if (!coords) return null;
-
             const { lat, lon } = coords;
-            // Fem una cerca inversa amb Nominatim (reverse geocoding)
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=ca`;
-            const response = await fetch(url, { headers: { 'User-Agent': 'EsdevenimentsDeTardorApp/1.0 (https://rcasfor.github.io/esdeveniments.html)' } });
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageApiKey}&language=ca`;
+            const response = await fetch(url);
             const data = await response.json();
-            // Nominatim retorna la província a 'state_district' o 'state'
-            return data.address?.state_district || data.address?.state || null;
+            return data.results[0]?.components.state_district || data.results[0]?.components.province || null;
         }
 
         // Helper per obtenir el mes i el dia per a la capçalera i la targeta
@@ -1139,15 +1135,27 @@
             allEventsData = await fetchAndParseEvents();
             statusMessageElement.textContent = 'Dades carregades. Geocodificant ubicacions...';
 
-            // Geocodificar totes les adreces de forma asíncrona en paral·lel
+            // Geocodificar totes les adreces de forma seqüencial per evitar errors de "rate limiting" de Nominatim.
             const locationsToGeocode = [...new Set(allEventsData.map(event => event.location))];
-            const geocodePromises = locationsToGeocode.map(async (location) => {
+            
+            // Funció per introduir una petita pausa entre peticions.
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+            for (const location of locationsToGeocode) {
+                // Si la ubicació ja està geocodificada (per una execució anterior o cache), la saltem.
+                if (locationCoordinates.hasOwnProperty(location)) {
+                    continue;
+                }
+
                 const coords = await geocodeAddress(location);
                 if (coords) {
                     locationCoordinates[location] = coords;
+                    logStatus(`Geocodificada: ${location}`);
                 }
-            });
-            await Promise.all(geocodePromises);
+                
+                // Pausa d'1 segon entre cada petició per respectar la política d'ús de Nominatim (màx. 1 req/seg).
+                await delay(1001);
+            }
 
             const provincePromises = allEventsData.map(async (event) => {
                 const province = await getProvinceFromLocation(event.location);
