@@ -410,7 +410,8 @@
                     return null;
                 }
             } catch (error) {
-                console.error('Error en la geocodificació:', error);
+                console.error('Error en la geocodificació:', error.message);
+                logStatus(`Error en la geocodificació per a l'adreça "${address}": ${error.message}`, 'error');
                 return null;
             }
         }
