@@ -407,6 +407,7 @@
                     return { lat: parseFloat(lat), lon: parseFloat(lon) };
                 } else {
                     console.warn(`No s'han trobat coordenades per a l'adreça: "${address}" amb Nominatim. Resposta:`, data);
+                    logStatus(`No s'han trobat coordenades per a l'adreça: "${address}". Si us plau, verifica que l'adreça sigui correcta.`, 'error');
                     return null;
                 }
             } catch (error) {
