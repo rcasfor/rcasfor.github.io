@@ -213,6 +213,9 @@
         // URL de la teva Google Sheet per a exportació en format CSV
         const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
 
+        // API Key d'OpenCage
+        const openCageApiKey = '9932c1b4ea9e482e8d04d7c96ca535d2';
+
         let allEventsData = [];
         let userLocation = null;
         let selectedFilterTypes = ['all']; // Canviat a array per selecció múltiple
@@ -381,7 +384,7 @@
         }
 
         /**
-         * Funció per geocodificar una adreça utilitzant l'API gratuïta de Nominatim (OpenStreetMap).
+         * Funció per geocodificar una adreça utilitzant l'API d'OpenCage.
          * @param {string} address - L'adreça a geocodificar.
          * @returns {Promise<Object|null>} Un objecte amb latitud i longitud o null si no es troba.
          */
@@ -389,25 +392,27 @@
             if (locationCoordinates.hasOwnProperty(address)) {
                 return locationCoordinates[address];
             }
-
-            if (!address) {
-                console.warn('Address missing for geocoding.');
+            
+            if (!openCageApiKey || !address) {
+                console.warn('API Key o adreça no trobada per a la geocodificació.');
                 return null;
             }
-            // L'API de Nominatim requereix un User-Agent personalitzat.
+
             const encodedAddress = encodeURIComponent(address);
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&accept-language=ca`;
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodedAddress}&key=${openCageApiKey}&language=ca&pretty=1`;
 
             try {
-                const response = await fetch(url, { headers: { 'User-Agent': 'EsdevenimentsDeTardorApp/1.0 (https://rcasfor.github.io/esdeveniments.html)' } });
+                const response = await fetch(url);
                 const data = await response.json();
 
-                if (data && data.length > 0) {
-                    const { lat, lon } = data[0];
-                    return { lat: parseFloat(lat), lon: parseFloat(lon) };
+                if (data.results && data.results.length > 0) {
+                    const { lat, lng } = data.results[0].geometry;
+                    const coords = { lat, lon: lng };
+                    locationCoordinates[address] = coords;
+                    return coords;
                 } else {
-                    console.warn(`No s'han trobat coordenades per a l'adreça: "${address}" amb Nominatim. Resposta:`, data);
-                    logStatus(`No s'han trobat coordenades per a l'adreça: "${address}". Si us plau, verifica que l'adreça sigui correcta.`, 'error');
+                    console.warn(`No s'han trobat coordenades per a l'adreça: "${address}" amb OpenCage. Resposta:`, data);
+                    logStatus(`Geocodificació fallida per a: "${address}". Revisa l'adreça.`, 'error');
                     return null;
                 }
             } catch (error) {
@@ -424,11 +429,18 @@
         async function getProvinceFromLocation(location) {
             const coords = locationCoordinates[location];
             if (!coords) return null;
+
             const { lat, lon } = coords;
             const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageApiKey}&language=ca`;
-            const response = await fetch(url);
-            const data = await response.json();
-            return data.results[0]?.components.state_district || data.results[0]?.components.province || null;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                // Retorna la província (com 'província de Barcelona') o el nom de l'estat si no es troba
+                return data.results[0]?.components.state_district || data.results[0]?.components.province || null;
+            } catch (error) {
+                console.error(`Error obtenint la província per a ${location}:`, error);
+                return null;
+            }
         }
 
         // Helper per obtenir el mes i el dia per a la capçalera i la targeta
@@ -453,7 +465,7 @@
             const now = new Date();
             return eventDate < now;
         }
-        
+
         /**
          * Checks if an event is currently happening.
          * @param {Object} event - The event object.
@@ -462,15 +474,15 @@
         function isEventInProgress(event) {
             if (!event.startDate || !event.startTime || !event.endDate || !event.endTime) return false;
             const now = new Date();
-            
+
             const [startDay, startMonth, startYear] = event.startDate.split('/');
             const [startHour, startMinute] = event.startTime.split(':');
             const startDate = new Date(startYear, parseInt(startMonth, 10) - 1, startDay, startHour, startMinute);
-            
+
             const [endDay, endMonth, endYear] = event.endDate.split('/');
             const [endHour, endMinute] = event.endTime.split(':');
             const endDate = new Date(endYear, parseInt(endMonth, 10) - 1, endDay, endHour, endMinute);
-            
+
             return now >= startDate && now <= endDate;
         }
 
@@ -482,20 +494,20 @@
         function getEventProgress(event) {
             if (!event.startDate || !event.startTime || !event.endDate || !event.endTime) return 0;
             const now = new Date();
-            
+
             const [startDay, startMonth, startYear] = event.startDate.split('/');
             const [startHour, startMinute] = event.startTime.split(':');
             const startDate = new Date(startYear, parseInt(startMonth, 10) - 1, startDay, startHour, startMinute);
-            
+
             const [endDay, endMonth, endYear] = event.endDate.split('/');
             const [endHour, endMinute] = event.endTime.split(':');
             const endDate = new Date(endYear, parseInt(endMonth, 10) - 1, endDay, endHour, endMinute);
-            
+
             const totalDuration = endDate.getTime() - startDate.getTime();
             const elapsed = now.getTime() - startDate.getTime();
 
             if (totalDuration <= 0) return 0;
-            
+
             const progress = (elapsed / totalDuration) * 100;
             return Math.min(100, Math.max(0, progress));
         }
@@ -511,10 +523,10 @@
             const [hour, minute] = event.endTime.split(':');
             const eventDate = new Date(year, parseInt(month, 10) - 1, day, hour, minute);
             const now = new Date();
-            
+
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
-            
+            const sevenDaysInMs = 2 * 24 * 60 * 60 * 1000;
+
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
 
@@ -540,11 +552,11 @@
             }
             const cardWrapperClasses = `flex items-center space-x-4 ${extraClasses}`;
             cardWrapper.className = cardWrapperClasses;
-            
+
             const cardContentClasses = "bg-gray-800 rounded-lg shadow-lg p-4 cursor-pointer transform transition duration-300 hover:scale-105 hover:shadow-xl flex flex-grow items-center space-x-4";
 
             // Add distance display if available
-            const distanceHtml = event.distance !== undefined ? 
+            const distanceHtml = event.distance !== undefined ?
                 `<p class="text-gray-400 text-sm mt-1">Distància: ${event.distance.toFixed(2)} km</p>` : '';
 
             // Add progress bar if event is in progress
@@ -606,10 +618,10 @@
             modalLocation.textContent = event.location;
             modalPrice.textContent = event.price;
             modalType.textContent = event.type;
-            
+
             // Substituïm els salts de línia amb etiquetes <br> per a una correcta visualització.
             modalDescription.innerHTML = (event.description || '').replace(/(\r\n|\n)/g, '<br>');
-            
+
             modalMapLink.href = generateGoogleMapsLink(event.location);
 
             // Handle organizer field
@@ -647,7 +659,7 @@
 
             const eventNameSlug = normalizeString(activeEvent.name).replace(/\s+/g, '-');
             const shareUrl = `https://rcasfor.github.io/esdeveniments.html#event-${eventNameSlug}`;
-            
+
             // Use the fallback method which is compatible with all browsers in this type of environment
             const textArea = document.createElement('textarea');
             textArea.value = shareUrl;
@@ -668,7 +680,7 @@
                 document.body.removeChild(textArea);
             }
         }
-        
+
         // Listener for share button
         document.getElementById('share-event-btn').addEventListener('click', shareEvent);
 
@@ -688,10 +700,10 @@
             } else {
                 console.log('Map does not exist, creating new map.');
             }
-            
+
             // Neteja qualsevol contingut d'error anterior
             mapContainer.innerHTML = '';
-            
+
             // Comprova si la llibreria Leaflet està disponible
             if (typeof L === 'undefined') {
                 console.error("Critical error: Leaflet library not loaded.");
@@ -706,7 +718,7 @@
             try {
                 // Inicialitza el mapa, centrat a Catalunya
                 myMap = L.map('map').setView([41.5, 1.7], 9);
-                
+
                 // Afegeix una capa base d'OpenStreetMap
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -721,9 +733,9 @@
                 </div>`;
                 return;
             }
-            
+
             const markers = [];
-            
+
             // Agrupa els esdeveniments per ubicació, utilitzant les coordenades de l'objecte global
             const eventsByLocation = {};
             allEventsData.forEach(event => {
@@ -743,7 +755,7 @@
             for (const loc in eventsByLocation) {
                 const eventsAtLocation = eventsByLocation[loc];
                 const coords = locationCoordinates[loc];
-                
+
                 const marker = L.marker([coords.lat, coords.lon]).addTo(myMap);
                 markers.push(marker);
 
@@ -762,14 +774,14 @@
                     `;
                 });
                 popupContent += `</div>`;
-                
+
                 marker.bindPopup(popupContent);
                 // Si només hi ha un esdeveniment, mostra el popup automàticament
                 if (eventsAtLocation.length === 1) {
                     marker.openPopup();
                 }
             }
-            
+
             // Ajusta el mapa per a que tots els marcadors siguin visibles
             if (markers.length > 0) {
                 const group = new L.featureGroup(markers);
@@ -805,7 +817,7 @@
                 }
             });
         }
-        
+
         // FUNCIÓ PER OBTENIR LA UBICACIÓ DE L'USUARI (si el navegador ho permet)
         function getUserLocation() {
             return new Promise((resolve, reject) => {
@@ -882,11 +894,11 @@
                 }
             });
         }
-        
+
         // Funció principal per filtrar i renderitzar els esdeveniments
         async function renderEvents(initialFilter = 'all') {
             eventsContainer.innerHTML = '';
-            
+
             // Si estem ordenant per proximitat i ja tenim les dades de l'usuari
             if (currentSortOrder === 'proximity' && userLocation) {
                 statusMessageElement.textContent = 'Ordenant per proximitat.';
@@ -896,7 +908,7 @@
 
 
             let filteredEvents = allEventsData;
-            
+
             // PRIMER FILTRE: PER VISIBILITAT (futurs/recents o passats antics)
             if (currentFilterMode === 'upcoming') {
                 filteredEvents = filteredEvents.filter(event => !isOldPastEvent(event));
@@ -933,13 +945,13 @@
 
                     if (!aCoords) return 1;
                     if (!bCoords) return -1;
-                    
+
                     const distA = calculateDistance(userLocation.lat, userLocation.lon, aCoords.lat, aCoords.lon);
                     const distB = calculateDistance(userLocation.lat, userLocation.lon, bCoords.lat, bCoords.lon);
-                    
+
                     a.distance = distA;
                     b.distance = distB;
-                    
+
                     return distA - distB;
                 });
             } else {
@@ -992,7 +1004,7 @@
                     const indexB = monthOrder.indexOf(monthB);
                     return indexA - indexB;
                 });
-                
+
                 sortedMonths.forEach(monthYear => {
                     const monthGroupDiv = document.createElement('div');
                     monthGroupDiv.className = "mb-8";
@@ -1022,7 +1034,7 @@
         // LISTENERS D'ESDEVENIMENTS
         closeModalBtn.addEventListener('click', hideEventDetail);
         closeMapBtn.addEventListener('click', hideMap); // Listener per tancar el mapa
-        
+
         // Listener per a la capçalera desplegable del filtre
         toggleFilterHeaderBtn.addEventListener('click', () => {
             filterContent.classList.toggle('hidden'); // Mostra o amaga el contingut del filtre
@@ -1058,7 +1070,7 @@
                     selectedArray.push('all');
                 }
             }
-            
+
             // Si estem canviant la província manualment, ho indiquem per desar-la.
             if (shouldSaveProvince) {
                 localStorage.setItem('manualProvinceSelection', 'true');
@@ -1106,7 +1118,7 @@
                 renderEvents();
             });
         });
-
+        
         filterProvinceButtons.forEach(button => {
             button.addEventListener('click', () => {
                 handleMultiSelect(button, selectedFilterProvinces, true); // Indiquem que volem guardar la província
@@ -1114,7 +1126,7 @@
         });
         
         showMapBtn.addEventListener('click', showMap); // Listener per mostrar el mapa
-        
+
         // --- Funcions per guardar i carregar filtres ---
         function saveFiltersToLocalStorage(saveProvinces = false) {
             const filters = {
@@ -1136,27 +1148,17 @@
             allEventsData = await fetchAndParseEvents();
             statusMessageElement.textContent = 'Dades carregades. Geocodificant ubicacions...';
 
-            // Geocodificar totes les adreces de forma seqüencial per evitar errors de "rate limiting" de Nominatim.
+            // Geocodificar totes les adreces en paral·lel. OpenCage ho permet.
             const locationsToGeocode = [...new Set(allEventsData.map(event => event.location))];
-            
-            // Funció per introduir una petita pausa entre peticions.
-            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-            for (const location of locationsToGeocode) {
-                // Si la ubicació ja està geocodificada (per una execució anterior o cache), la saltem.
-                if (locationCoordinates.hasOwnProperty(location)) {
-                    continue;
-                }
-
+            const geocodePromises = locationsToGeocode.map(async (location) => {
                 const coords = await geocodeAddress(location);
                 if (coords) {
                     locationCoordinates[location] = coords;
-                    logStatus(`Geocodificada: ${location}`);
                 }
-                
-                // Pausa d'1 segon entre cada petició per respectar la política d'ús de Nominatim (màx. 1 req/seg).
-                await delay(1001);
-            }
+            });
+            await Promise.all(geocodePromises);
+
+            logStatus('Geocodificació completa. Obtenint províncies...');
 
             const provincePromises = allEventsData.map(async (event) => {
                 const province = await getProvinceFromLocation(event.location);
@@ -1243,11 +1245,17 @@
                 }
             }
 
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=ca`;
-            const response = await fetch(url, { headers: { 'User-Agent': 'EsdevenimentsDeTardorApp/1.0 (https://rcasfor.github.io/esdeveniments.html)' } });
-            const data = await response.json();
-            // La província pot estar en 'state_district' (per a Catalunya) o 'state'
-            return data.address?.state_district || data.address?.state || null;
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${openCageApiKey}&language=ca`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const components = data.results[0]?.components;
+                // La província pot estar en 'state_district' (per a Catalunya) o 'state'/'province'
+                return components?.state_district || components?.province || components?.state || null;
+            } catch (error) {
+                console.error('Error en la geocodificació inversa:', error);
+                return null;
+            }
         }
 
         function cacheUserProvince(province) {
@@ -1268,7 +1276,7 @@
             }
             return province;
         }
-        
+
         // Funció combinada per actualitzar botons i guardar l'estat (excepte la província)
         function updateAndSaveFilters() {
             // Comprovem si la província va ser seleccionada manualment per decidir si la guardem
@@ -1289,7 +1297,7 @@
             selectedFilterProvinces = ['all'];
             window.location.reload(); // Recarreguem la pàgina per aplicar els canvis des de zero
         }
-        
+
         document.addEventListener('DOMContentLoaded', init);
         window.addEventListener('scroll', handleScroll);
         resetFiltersBtn.addEventListener('click', resetAllFilters);
