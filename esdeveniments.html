@@ -230,9 +230,6 @@
         
         // Objecte per emmagatzemar les coordenades geocodificades de les ubicacions
         let locationCoordinates = {};
-
-        // Nom de la clau per a la memòria cau de geocodificació al localStorage
-        const GEOCACHE_KEY = 'eventGeocache';
         
         // Per mantenir un seguiment de l'esdeveniment obert per a la funció de compartir
         let activeEvent = null;
@@ -385,9 +382,8 @@
 
         /**
          * Funció per geocodificar una adreça utilitzant l'API gratuïta de Nominatim (OpenStreetMap).
-         * Ara també retorna la província per estalviar una trucada a l'API.
          * @param {string} address - L'adreça a geocodificar.
-         * @returns {Promise<Object|null>} Un objecte amb {lat, lon, province} o null si no es troba.
+         * @returns {Promise<Object|null>} Un objecte amb latitud i longitud o null si no es troba.
          */
         async function geocodeAddress(address) {
             if (locationCoordinates.hasOwnProperty(address)) {
@@ -517,7 +513,7 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 2 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
+            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
             
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
@@ -1130,29 +1126,13 @@
             localStorage.setItem('eventFilters', JSON.stringify(filters));
         }
 
-        /**
-         * Guarda l'objecte de coordenades geocodificades al localStorage.
-         */
-        function saveGeocacheToLocalStorage() {
-            localStorage.setItem(GEOCACHE_KEY, JSON.stringify(locationCoordinates));
-        }
-
-        /**
-         * Carrega les coordenades geocodificades des del localStorage a la memòria.
-         */
-        function loadGeocacheFromLocalStorage() {
-            const cachedData = localStorage.getItem(GEOCACHE_KEY);
-            if (cachedData) {
-                locationCoordinates = JSON.parse(cachedData);
-            }
-        }
         // Càrrega inicial de les dades i renderització
         async function init() {
-            // --- PAS 1: Carregar filtres guardats i iniciar detecció d'ubicació ---
-            const userProvinceFilterPromise = loadFiltersAndSetProvince(); // Aquesta funció ara gestiona tot
-            // --- PAS 2: Carregar i processar les dades dels esdeveniments ---
+            // --- PAS 1: Carregar filtres (excepte província) i mostrar missatge de càrrega ---
+            loadSavedFilters();
             loadingMessage.classList.remove('hidden');
             statusMessageElement.textContent = 'Carregant dades...';
+            
             allEventsData = await fetchAndParseEvents();
             statusMessageElement.textContent = 'Dades carregades. Geocodificant ubicacions...';
 
@@ -1187,12 +1167,16 @@
             statusMessageElement.textContent = 'Geocodificació completa. Llest per a l\'acció.';
             loadingMessage.classList.add('hidden');
 
-            // --- PAS 3: Esperar que la promesa del filtre de província acabi i renderitzar ---
-            await userProvinceFilterPromise;
+            // --- PAS 3: Renderització inicial amb totes les províncies ---
+            // Per defecte, comencem mostrant totes les províncies.
+            selectedFilterProvinces = ['all'];
+            await renderEvents();
 
-            await renderEvents(); // Afegit await per esperar que es renderitzi amb el filtre correcte
+            // --- PAS 4: Detectar la província de l'usuari i actualitzar el filtre ---
+            // Això s'executa en segon pla i actualitzarà la vista quan acabi.
+            await setProvinceFilterFromLocation();
 
-            // Comprovar si hi ha un hash per obrir un modal d'esdeveniment
+            // --- PAS 5: Comprovar si s'ha d'obrir un esdeveniment específic des de l'URL ---
             if (window.location.hash) {
                 const hash = window.location.hash.substring(1);
                 if (hash.startsWith('event-')) {
@@ -1206,51 +1190,46 @@
         }
 
         // --- Funcions de geolocalització i filtre de província (mogudes fora d'init) ---
-
-        async function loadFiltersAndSetProvince() { // Aquesta funció ara sempre estableix la província per ubicació
+        
+        // Funció per carregar els filtres guardats (excepte la província)
+        function loadSavedFilters() {
             const savedFilters = localStorage.getItem('eventFilters');
             if (savedFilters) {
                 const { types, sortOrder, mode } = JSON.parse(savedFilters);
                 selectedFilterTypes = types || ['all'];
                 currentSortOrder = sortOrder || 'date';
                 currentFilterMode = mode || 'upcoming';
-                console.log('Filtres carregats des de localStorage:', { types, sortOrder, mode });
-                // Si l'ordenació per proximitat estava guardada, necessitem la ubicació
-                if (currentSortOrder === 'proximity') {
-                    await getUserLocation();
-                }
+            }
+        }
+
+        // Funció per establir el filtre de província basat en la ubicació de l'usuari
+        async function setProvinceFilterFromLocation() {
+            // Si l'usuari ja ha seleccionat una província manualment, no fem res.
+            if (localStorage.getItem('manualProvinceSelection') === 'true') {
+                return;
             }
 
-            // Sempre intentem establir la província per ubicació, independentment dels altres filtres guardats.
             const cachedProvince = getCachedUserProvince();
             if (cachedProvince) {
                 selectedFilterProvinces = [cachedProvince];
                 console.log(`S'ha carregat la província des de la memòria cau: ${cachedProvince}`);
-                await getUserLocation(); // Obtenim la ubicació igualment per a l'ordenació per proximitat
             } else {
-                // Si no hi ha província a la memòria cau, procedim amb la geolocalització completa.
-                await setUserProvinceFilter();
+                // Si no hi ha res a la memòria cau, obtenim la ubicació de l'usuari.
+                await getUserLocation();
+                if (userLocation) {
+                    const province = await getProvinceFromCoordinates(userLocation.lat, userLocation.lon);
+                    if (province) {
+                        selectedFilterProvinces = [province];
+                        cacheUserProvince(province);
+                        console.log(`S'ha establert el filtre de província per defecte a: ${province}`);
+                    }
+                }
             }
-        }
-
-        async function setUserProvinceFilter() { // Funció per detectar i establir la província
-            // Si no hi ha dades a la memòria cau, obtenim la ubicació i la geocodifiquem
-            await getUserLocation(); // Aquesta funció ja gestiona els errors de geolocalització
+            // Si hem obtingut una província (de la cau o nova), tornem a renderitzar.
             if (!userLocation) {
-                console.warn('No s\'ha pogut obtenir la ubicació de l\'usuari, mostrant totes les províncies.');
-                selectedFilterProvinces = ['all'];
                 return;
             }
-
-            const province = await getProvinceFromCoordinates(userLocation.lat, userLocation.lon);
-            if (province) {
-                selectedFilterProvinces = [province];
-                cacheUserProvince(province); // Guardem la província a la memòria cau
-                console.log(`S'ha establert el filtre de província per defecte a: ${province}`);
-            } else {
-                console.warn('No s\'ha pogut determinar la província de l\'usuari, mostrant totes les províncies.');
-                selectedFilterProvinces = ['all'];
-            }
+            await renderEvents();
         }
 
         async function getProvinceFromCoordinates(latitude, longitude) {
