@@ -213,6 +213,9 @@
         // URL de la teva Google Sheet per a exportació en format CSV
         const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
 
+        // API Key d'OpenCage
+        const openCageApiKey = '9932c1b4ea9e482e8d04d7c96ca535d2';
+
         let allEventsData = [];
         let userLocation = null;
         let selectedFilterTypes = ['all']; // Canviat a array per selecció múltiple
@@ -230,6 +233,9 @@
         
         // Objecte per emmagatzemar les coordenades geocodificades de les ubicacions
         let locationCoordinates = {};
+
+        // Nom de la clau per a la memòria cau de geocodificació al localStorage
+        const GEOCACHE_KEY = 'eventGeocache';
         
         // Per mantenir un seguiment de l'esdeveniment obert per a la funció de compartir
         let activeEvent = null;
@@ -381,32 +387,38 @@
         }
 
         /**
-         * Funció per geocodificar una adreça utilitzant l'API gratuïta de Nominatim (OpenStreetMap).
+         * Funció per geocodificar una adreça utilitzant l'API d'OpenCage.
+         * Ara també retorna la província per estalviar una trucada a l'API.
          * @param {string} address - L'adreça a geocodificar.
-         * @returns {Promise<Object|null>} Un objecte amb latitud i longitud o null si no es troba.
+         * @returns {Promise<Object|null>} Un objecte amb {lat, lon, province} o null si no es troba.
          */
         async function geocodeAddress(address) {
             if (locationCoordinates.hasOwnProperty(address)) {
                 return locationCoordinates[address];
             }
 
-            if (!address) {
-                console.warn('Address missing for geocoding.');
+            if (!openCageApiKey || !address) {
+                console.warn('API Key o adreça no trobada per a la geocodificació.');
                 return null;
             }
-            // L'API de Nominatim requereix un User-Agent personalitzat.
+
             const encodedAddress = encodeURIComponent(address);
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&accept-language=ca`;
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodedAddress}&key=${openCageApiKey}&language=ca&pretty=1`;
 
             try {
-                const response = await fetch(url, { headers: { 'User-Agent': 'EsdevenimentsDeTardorApp/1.0 (https://rcasfor.github.io/esdeveniments.html)' } });
+                const response = await fetch(url);
                 const data = await response.json();
 
-                if (data && data.length > 0) {
-                    const { lat, lon } = data[0];
-                    return { lat: parseFloat(lat), lon: parseFloat(lon) };
+                if (data.results && data.results.length > 0) {
+                    const result = data.results[0];
+                    const { lat, lng } = result.geometry;
+                    const province = result.components.state_district || result.components.province || null;
+                    const locationData = { lat, lon: lng, province };
+                    locationCoordinates[address] = locationData;
+                    saveGeocacheToLocalStorage(); // Guarda la nova dada a la memòria cau persistent
+                    return locationData;
                 } else {
-                    console.warn(`No s'han trobat coordenades per a l'adreça: "${address}" amb Nominatim. Resposta:`, data);
+                    console.warn(`No s'han trobat coordenades per a l'adreça: "${address}" amb OpenCage. Resposta:`, data);
                     logStatus(`Geocodificació fallida per a: "${address}". Revisa l'adreça.`, 'error');
                     return null;
                 }
@@ -414,21 +426,6 @@
                 console.error('Error en la geocodificació:', error);
                 return null;
             }
-        }
-
-        /**
-         * Funció per obtenir la província d'una ubicació a partir de les seves coordenades.
-         * @param {string} location - La ubicació de l'esdeveniment.
-         * @returns {Promise<string|null>} El nom de la província o null.
-         */
-        async function getProvinceFromLocation(location) {
-            const coords = locationCoordinates[location];
-            if (!coords) return null;
-            const { lat, lon } = coords;
-            const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageApiKey}&language=ca`;
-            const response = await fetch(url);
-            const data = await response.json();
-            return data.results[0]?.components.state_district || data.results[0]?.components.province || null;
         }
 
         // Helper per obtenir el mes i el dia per a la capçalera i la targeta
@@ -501,9 +498,9 @@
         }
 
         /**
-         * Checks if an event is in the old past (more than 7 days ago).
+         * Checks if an event is in the old past (more than 2 days ago).
          * @param {Object} event - The event object.
-         * @returns {boolean} True if the event ended more than 7 days ago, false otherwise.
+         * @returns {boolean} True if the event ended more than 2 days ago, false otherwise.
          */
         function isOldPastEvent(event) {
             if (!event.endDate || !event.endTime) return false;
@@ -513,7 +510,7 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
+            const sevenDaysInMs = 2 * 24 * 60 * 60 * 1000; 
             
             return eventDate < now && diffInMs > sevenDaysInMs;
         }
@@ -1126,6 +1123,22 @@
             localStorage.setItem('eventFilters', JSON.stringify(filters));
         }
 
+        /**
+         * Guarda l'objecte de coordenades geocodificades al localStorage.
+         */
+        function saveGeocacheToLocalStorage() {
+            localStorage.setItem(GEOCACHE_KEY, JSON.stringify(locationCoordinates));
+        }
+
+        /**
+         * Carrega les coordenades geocodificades des del localStorage a la memòria.
+         */
+        function loadGeocacheFromLocalStorage() {
+            const cachedData = localStorage.getItem(GEOCACHE_KEY);
+            if (cachedData) {
+                locationCoordinates = JSON.parse(cachedData);
+            }
+        }
         // Càrrega inicial de les dades i renderització
         async function init() {
             // --- PAS 1: Carregar filtres (excepte província) i mostrar missatge de càrrega ---
@@ -1133,36 +1146,25 @@
             loadingMessage.classList.remove('hidden');
             statusMessageElement.textContent = 'Carregant dades...';
             
+            loadGeocacheFromLocalStorage(); // Carrega la memòria cau de geolocalització
             allEventsData = await fetchAndParseEvents();
             statusMessageElement.textContent = 'Dades carregades. Geocodificant ubicacions...';
 
-            // Geocodificar totes les adreces de forma seqüencial per evitar errors de "rate limiting" de Nominatim.
-            const locationsToGeocode = [...new Set(allEventsData.map(event => event.location))];
-            
-            // Funció per introduir una petita pausa entre peticions.
-            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            // Geocodifica només les ubicacions úniques que no estiguin ja a la memòria cau.
+            const uniqueLocations = [...new Set(allEventsData.map(event => event.location))];
+            const locationsToGeocode = uniqueLocations.filter(loc => !locationCoordinates[loc]);
 
-            for (const location of locationsToGeocode) {
-                // Si la ubicació ja està geocodificada (per una execució anterior o cache), la saltem.
-                if (locationCoordinates.hasOwnProperty(location)) {
-                    continue;
+            const geocodePromises = locationsToGeocode.map(location => geocodeAddress(location));
+            await Promise.all(geocodePromises);
+
+            logStatus('Geocodificació completa. Assignant províncies...');
+
+            // Assigna la província a cada esdeveniment a partir de les dades ja obtingudes
+            allEventsData.forEach(event => {
+                if (locationCoordinates[event.location]) {
+                    event.province = locationCoordinates[event.location].province;
                 }
-
-                const coords = await geocodeAddress(location);
-                if (coords) {
-                    locationCoordinates[location] = coords;
-                    logStatus(`Geocodificada: ${location}`);
-                }
-                
-                // Pausa d'1 segon entre cada petició per respectar la política d'ús de Nominatim (màx. 1 req/seg).
-                await delay(1001);
-            }
-
-            const provincePromises = allEventsData.map(async (event) => {
-                const province = await getProvinceFromLocation(event.location);
-                event.province = province;
             });
-            await Promise.all(provincePromises);
 
             statusMessageElement.textContent = 'Geocodificació completa. Llest per a l\'acció.';
             loadingMessage.classList.add('hidden');
@@ -1242,11 +1244,17 @@
                 }
             }
 
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=ca`;
-            const response = await fetch(url, { headers: { 'User-Agent': 'EsdevenimentsDeTardorApp/1.0 (https://rcasfor.github.io/esdeveniments.html)' } });
-            const data = await response.json();
-            // La província pot estar en 'state_district' (per a Catalunya) o 'state'
-            return data.address?.state_district || data.address?.state || null;
+            const url = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${openCageApiKey}&language=ca`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const components = data.results[0]?.components;
+                // La província pot estar en 'state_district' (per a Catalunya) o 'state'/'province'
+                return components?.state_district || components?.province || components?.state || null;
+            } catch (error) {
+                console.error('Error en la geocodificació inversa:', error);
+                return null;
+            }
         }
 
         function cacheUserProvince(province) {
@@ -1284,6 +1292,7 @@
             localStorage.removeItem('eventFilters');
             localStorage.removeItem('userProvince');
             localStorage.removeItem('userLocationCoords');
+            localStorage.removeItem(GEOCACHE_KEY); // Neteja també la memòria cau de geocodificació
             selectedFilterTypes = ['all'];
             selectedFilterProvinces = ['all'];
             window.location.reload(); // Recarreguem la pàgina per aplicar els canvis des de zero
