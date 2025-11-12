@@ -213,6 +213,9 @@
         // URL de la teva Google Sheet per a exportació en format CSV
         const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1Wd5lL_NDmfvQ-SXIP74EN-gRXk3f5lizJdg3AHF2YpM/gviz/tq?tqx=out:csv&gid=0';
 
+        // Global delay function to respect API rate limits
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
         // API Key d'OpenCage
         const openCageApiKey = '9932c1b4ea9e482e8d04d7c96ca535d2';
 
@@ -421,6 +424,7 @@
             
             try {
                 const response = await fetch(url);
+                await delay(200); // Add delay after actual API call
                 const data = await response.json();
                 if (data.results && data.results.length > 0) {
                     const { lat, lng } = data.results[0].geometry;
@@ -436,22 +440,51 @@
         }
 
         /**
-         * Funció per obtenir la província d'una ubicació a partir de les seves coordenades (utilitzant OpenCage).
-         * @param {string} location - La ubicació de l'esdeveniment.
-         * @returns {Promise<string|null>} El nom de la província o null.
+         * Ensures an event object has its coordinates and province data.
+         * Makes API calls only if data is not already cached.
+         * Stores coordinates in event.coords and province in event.province.
+         * @param {Object} event - The event object.
+         * @returns {Promise<void>}
          */
-        async function getProvinceFromLocation(location) {
-            const coords = locationCoordinates[location];
-            if (!coords) return null;
-            const { lat, lon } = coords;
-            const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageApiKey}&language=ca`;
-            const response = await fetch(url);
-            const data = await response.json();
-            const province = data.results[0]?.components.state_district || data.results[0]?.components.province || null;
-            // Normalitzem el nom de la província per consistència
-            if (province) return province.split(' ').slice(-1)[0]; // 'Província de Barcelona' -> 'Barcelona'
-            return null;
+        async function ensureEventLocationData(event) {
+            if (!event.location) return;
+
+            // 1. Ensure coordinates are available
+            if (!event.coords) {
+                // Check global cache first
+                if (locationCoordinates[event.location]) {
+                    event.coords = locationCoordinates[event.location];
+                } else {
+                    const coords = await geocodeAddress(event.location); // This handles API call and caching
+                    if (coords) {
+                        event.coords = coords;
+                    } else {
+                        console.warn(`Could not geocode location for event: ${event.name} at ${event.location}`);
+                        return; // Cannot proceed without coordinates
+                    }
+                }
+            }
+
+            // 2. Ensure province is available (only if coords are present)
+            if (event.coords && !event.province) {
+                const { lat, lon } = event.coords;
+                const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageApiKey}&language=ca`;
+                try {
+                    const response = await fetch(url);
+                    await delay(200); // Add delay after actual API call
+                    const data = await response.json();
+                    const province = data.results[0]?.components.state_district || data.results[0]?.components.province || null;
+                    if (province) {
+                        event.province = province.split(' ').slice(-1)[0]; // 'Província de Barcelona' -> 'Barcelona'
+                    } else {
+                        console.warn(`Could not determine province for event: ${event.name} at ${event.location}`);
+                    }
+                } catch (error) {
+                    console.error('Error in reverse geocoding for province:', error);
+                }
+            }
         }
+
 
         // Helper per obtenir el mes i el dia per a la capçalera i la targeta
         function getMonthAndDay(dateString) {
@@ -523,9 +556,9 @@
         }
 
         /**
-         * Checks if an event is in the old past (more than 7 days ago).
+         * Checks if an event is in the old past (more than 2 days ago).
          * @param {Object} event - The event object.
-         * @returns {boolean} True if the event ended more than 7 days ago, false otherwise.
+         * @returns {boolean} True if the event ended more than 2 days ago, false otherwise.
          */
         function isOldPastEvent(event) {
             if (!event.endDate || !event.endTime) return false;
@@ -535,9 +568,9 @@
             const now = new Date();
             
             const diffInMs = now.getTime() - eventDate.getTime();
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // Canviat de 2 a 7 dies
+            const twoDaysInMs = 2 * 24 * 60 * 60 * 1000;
             
-            return eventDate < now && diffInMs > sevenDaysInMs;
+            return eventDate < now && diffInMs > twoDaysInMs;
         }
 
         // Funció per generar un enllaç de Google Maps
@@ -926,6 +959,19 @@
                 filteredEvents = filteredEvents.filter(event => isOldPastEvent(event));
             }
 
+            // --- LAZY GEOCODING FOR PROVINCE FILTERING AND PROXIMITY SORTING ---
+            const needsGeocodingForFilterOrSort = 
+                !selectedFilterProvinces.includes('all') || 
+                (currentSortOrder === 'proximity' && userLocation);
+
+            if (needsGeocodingForFilterOrSort) {
+                statusMessageElement.textContent = 'Geocodificant ubicacions necessàries per filtres/ordenació...';
+                const geocodingPromises = filteredEvents.map(event => ensureEventLocationData(event));
+                await Promise.all(geocodingPromises);
+                statusMessageElement.textContent = 'Geocodificació per filtres/ordenació completa.';
+            }
+            // -------------------------------------------------------------------
+
             // SEGON FILTRE: PER TIPUS (Swing, Blues, etc.)
             if (!selectedFilterTypes.includes('all')) {
                 const typesToFilter = selectedFilterTypes.flatMap(type => eventTypeMapping[type] || []);
@@ -936,13 +982,16 @@
                 });
             }
 
-            // TERCER FILTRE: PER PROVÍNCIA - ara amb selecció múltiple
+            // TERCER FILTRE: PER PROVÍNCIA - ara amb selecció múltiple (usa event.province)
             if (!selectedFilterProvinces.includes('all')) {
                 filteredEvents = filteredEvents.filter(event => {
-                    const province = event.province || '';
-                    if (!province) return false;
-                    const lowerProvince = province.toLowerCase();
+                    // If event.province is not set (meaning ensureEventLocationData failed or wasn't called for it),
+                    // it won't match any province filter, which is desired behavior (don't show if we can't filter).
+                    const eventProvince = event.province || ''; 
+                    if (!eventProvince) return false; // If province couldn't be determined, exclude it.
 
+                    const lowerEventProvince = eventProvince.toLowerCase();
+                    
                     return selectedFilterProvinces.some(selectedProvince => {
                         const lowerSelectedProvince = selectedProvince.toLowerCase();
                         // Comprovació directa (ex: "província de tarragona" inclou "tarragona")
@@ -957,11 +1006,12 @@
             if (currentSortOrder === 'proximity' && userLocation) {
                 // Ordenar per proximitat
                 filteredEvents.sort((a, b) => {
-                    const aCoords = locationCoordinates[normalizeString(a.location)];
-                    const bCoords = locationCoordinates[normalizeString(b.location)];
+                    // We now rely on event.coords being populated by ensureEventLocationData
+                    const aCoords = a.coords;
+                    const bCoords = b.coords;
 
-                    if (!aCoords) return 1;
-                    if (!bCoords) return -1;
+                    if (!aCoords) return 1; // Events without coords go to the end
+                    if (!bCoords) return -1; // Events without coords go to the end
                     
                     const distA = calculateDistance(userLocation.lat, userLocation.lon, aCoords.lat, aCoords.lon);
                     const distB = calculateDistance(userLocation.lat, userLocation.lon, bCoords.lat, bCoords.lon);
@@ -1210,6 +1260,7 @@
                     const eventNameSlug = hash.substring(6);
                     const event = allEventsData.find(e => normalizeString(e.name).replace(/\s+/g, '-') === eventNameSlug);
                     if (event) {
+                        await ensureEventLocationData(event); // Ensure event location data is available before showing detail
                         showEventDetail(event);
                     }
                 }
@@ -1218,16 +1269,17 @@
 
         // --- Funcions de geolocalització i filtre de província (mogudes fora d'init) ---
 
-        async function loadFiltersAndSetProvince() { // Aquesta funció ara sempre estableix la província per ubicació
+        async function loadFiltersAndSetProvince() {
             const savedFilters = localStorage.getItem('eventFilters');
             if (savedFilters) {
                 const { types, sortOrder, mode } = JSON.parse(savedFilters);
-                selectedFilterTypes = types || ['all'];
+                const { provinces } = JSON.parse(savedFilters); // Also load provinces
+                selectedFilterTypes = Array.isArray(types) ? types : ['all'];
                 currentSortOrder = sortOrder || 'date';
                 currentFilterMode = mode || 'upcoming';
+                selectedFilterProvinces = provinces || ['all']; // Set provinces from saved filters
                 console.log('Filtres carregats des de localStorage:', { types, sortOrder, mode });
-                // Si l'ordenació per proximitat estava guardada, necessitem la ubicació
-                if (currentSortOrder === 'proximity') {
+                if (currentSortOrder === 'proximity' || !selectedFilterProvinces.includes('all')) {
                     await getUserLocation();
                 }
             }
@@ -1235,16 +1287,17 @@
             // Sempre intentem establir la província per ubicació, independentment dels altres filtres guardats.
             const cachedProvince = getCachedUserProvince();
             if (cachedProvince) {
-                selectedFilterProvinces = [cachedProvince];
-                console.log(`S'ha carregat la província des de la memòria cau: ${cachedProvince}`);
-                await getUserLocation(); // Obtenim la ubicació igualment per a l'ordenació per proximitat
+                if (!localStorage.getItem('manualProvinceSelection')) { // Only use cached if no manual override
+                    selectedFilterProvinces = [cachedProvince];
+                    console.log(`S'ha carregat la província des de la memòria cau: ${cachedProvince}`);
+                }
+                if (currentSortOrder === 'proximity') await getUserLocation(); // Get user location for proximity
             } else {
                 // Si no hi ha província a la memòria cau, procedim amb la geolocalització completa.
                 await setUserProvinceFilter();
             }
         }
-
-        async function setUserProvinceFilter() { // Funció per detectar i establir la província
+        async function setUserProvinceFilter() {
             // Si no hi ha dades a la memòria cau, obtenim la ubicació i la geocodifiquem
             await getUserLocation(); // Aquesta funció ja gestiona els errors de geolocalització
             if (!userLocation) {
@@ -1255,6 +1308,7 @@
 
             const province = await getProvinceFromCoordinates(userLocation.lat, userLocation.lon);
             if (province) {
+                // Only set if no manual selection or if manual selection is 'all'
                 selectedFilterProvinces = [province];
                 cacheUserProvince(province); // Guardem la província a la memòria cau
                 console.log(`S'ha establert el filtre de província per defecte a: ${province}`);
@@ -1303,11 +1357,13 @@
         // Funció combinada per actualitzar botons i guardar l'estat (excepte la província)
         function updateAndSaveFilters() {
             // Comprovem si la província va ser seleccionada manualment per decidir si la guardem
-            const shouldSaveProvince = localStorage.getItem('manualProvinceSelection') === 'true';
+            const manualProvinceSelection = localStorage.getItem('manualProvinceSelection') === 'true';
             updateFilterButtons(selectedFilterTypes, currentSortOrder, currentFilterMode, selectedFilterProvinces);
-            saveFiltersToLocalStorage(shouldSaveProvince);
-            if (shouldSaveProvince) {
+            // Save provinces if manually selected OR if the current selection is 'all' (to persist reset)
+            saveFiltersToLocalStorage(manualProvinceSelection || selectedFilterProvinces.includes('all'));
+            if (manualProvinceSelection) {
                 localStorage.removeItem('manualProvinceSelection'); // Netegem l'indicador
+                console.log('Manual province selection flag cleared.');
             }
         }
 
