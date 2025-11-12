@@ -1031,9 +1031,9 @@
                     return selectedFilterProvinces.some(selectedProvince => {
                         const lowerSelectedProvince = selectedProvince.toLowerCase();
                         // Comprovació directa (ex: "província de tarragona" inclou "tarragona")
-                        const directMatch = lowerProvince.includes(lowerSelectedProvince);
+                        const directMatch = lowerEventProvince.includes(lowerSelectedProvince);
                         // Comprovació per mapeig de comarques (ex: "tarragonès" pertany a "tarragona")
-                        return directMatch || getProvinceFromRegion(lowerProvince) === lowerSelectedProvince;
+                        return directMatch || getProvinceFromRegion(lowerEventProvince) === lowerSelectedProvince;
                     });
                 });
             }
