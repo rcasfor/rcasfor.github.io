@@ -439,6 +439,35 @@
             }
         }
 
+        // Helper to normalize province names to match filter buttons (e.g., "Barcelona")
+        function normalizeProvinceName(rawName) {
+            if (!rawName) return null;
+            const lowerRaw = rawName.toLowerCase();
+
+            // Check for direct province names (e.g., "Barcelona")
+            const knownProvinces = ['barcelona', 'tarragona', 'lleida', 'girona'];
+            if (knownProvinces.includes(lowerRaw)) {
+                return rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+            }
+
+            // Check if it's a comarca and map to province
+            const mappedProvinceKey = getProvinceFromRegion(lowerRaw); // getProvinceFromRegion returns lowercase key
+            if (mappedProvinceKey) {
+                return mappedProvinceKey.charAt(0).toUpperCase() + mappedProvinceKey.slice(1).toLowerCase();
+            }
+
+            // Check for "Província de X" format
+            if (lowerRaw.startsWith('província de ')) {
+                const parts = lowerRaw.split(' ');
+                const lastWord = parts[parts.length - 1];
+                if (knownProvinces.includes(lastWord)) {
+                    return lastWord.charAt(0).toUpperCase() + lastWord.slice(1).toLowerCase();
+                }
+            }
+            
+            return null; // Not a recognized province or comarca that maps to one
+        }
+
         /**
          * Ensures an event object has its coordinates and province data.
          * Makes API calls only if data is not already cached.
@@ -473,9 +502,16 @@
                     const response = await fetch(url);
                     await delay(200); // Add delay after actual API call
                     const data = await response.json();
-                    const province = data.results[0]?.components.state_district || data.results[0]?.components.province || null;
-                    if (province) {
-                        event.province = province.split(' ').slice(-1)[0]; // 'Província de Barcelona' -> 'Barcelona'
+                    const rawStateDistrict = data.results[0]?.components.state_district;
+                    const rawProvince = data.results[0]?.components.province;
+
+                    let determinedProvince = normalizeProvinceName(rawProvince); // Try province first
+                    if (!determinedProvince) { // If province didn't yield a result, try state_district
+                        determinedProvince = normalizeProvinceName(rawStateDistrict);
+                    }
+
+                    if (determinedProvince) {
+                        event.province = determinedProvince;
                     } else {
                         console.warn(`Could not determine province for event: ${event.name} at ${event.location}`);
                     }
@@ -1331,8 +1367,15 @@
             const url = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${openCageApiKey}&language=ca`;
             const response = await fetch(url);
             const data = await response.json();
-            const province = data.results[0]?.components.state_district || data.results[0]?.components.province || null;
-            return province ? province.split(' ').slice(-1)[0] : null; // 'Província de Barcelona' -> 'Barcelona'
+            
+            const rawStateDistrict = data.results[0]?.components.state_district;
+            const rawProvince = data.results[0]?.components.province;
+
+            let determinedProvince = normalizeProvinceName(rawProvince); // Try province first
+            if (!determinedProvince) { // If province didn't yield a result, try state_district
+                determinedProvince = normalizeProvinceName(rawStateDistrict);
+            }
+            return determinedProvince;
         }
 
         function cacheUserProvince(province) {
